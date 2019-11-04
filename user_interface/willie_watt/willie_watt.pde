@@ -33,7 +33,8 @@ JSONObject tx_json;
 Textarea myTextarea;
 Textarea myTextarea2;
 Println console;
-Knob baseSpeedKnob;
+Knob temperatureKnob;
+Knob pressureKnob;
 
 // serial port buttons
 String serial_list;                // list of serial ports
@@ -71,13 +72,18 @@ void serialEvent(Serial serial_port) {
          myTextarea2.setText(buffer);
       } else {
         // Get the values of the Sensor Array
-        array_values = json.getJSONArray("array_values");
+        //array_values = json.getJSONArray("array_values");
         // Get the values of the accelerometer
         press_sensor_1 = json.getFloat("press_sensor_1");
         temp_sensor_1 = json.getFloat("temp_sensor_1");
         uControllerState = json.getInt("uControllerState");
         myTextarea2.setText(json.toString());
-
+     //update knobs
+     temperatureKnob.setValue(temp_sensor_1);
+     pressureKnob.setValue(press_sensor_1);
+     
+     if(temp_sensor_1 > 150)
+     temperatureKnob.setColorForeground(color(#ff0000));
       }
     } else
     {
@@ -85,7 +91,7 @@ void serialEvent(Serial serial_port) {
     }
   }
   catch (Exception e) {
-    println("Initialization exception");
+    println("Initialization exception" + e);
   }
 }
 
@@ -177,9 +183,10 @@ void setup() {
                   .setColorForeground(color(#216329));
   ;
 
-  baseSpeedKnob = cp5.addKnob("baseSpeedValue")
+               
+                 temperatureKnob = cp5.addKnob("Temperature")
                .setRange(0,255)
-               .setValue(50)
+               .setValue(temp_sensor_1)
                .setPosition(tunning_values_x_pos+400,tunning_values_y_pos+100)
                .setRadius(50)
                .setNumberOfTickMarks(10)
@@ -189,6 +196,22 @@ void setup() {
                .setColorBackground(color(#216329))
                .setColorActive(color(255,255,0))
                .setDragDirection(Knob.HORIZONTAL)
+               .lock()
+               ;
+               
+                 pressureKnob = cp5.addKnob("Pressure")
+               .setRange(0,255)
+               .setValue(press_sensor_1)
+               .setPosition(tunning_values_x_pos+400,tunning_values_y_pos+250)
+               .setRadius(50)
+               .setNumberOfTickMarks(10)
+               .setTickMarkLength(4)
+               .snapToTickMarks(true)
+               .setColorForeground(color(#54f367))
+               .setColorBackground(color(#216329))
+               .setColorActive(color(255,255,0))
+               .setDragDirection(Knob.HORIZONTAL)
+               .lock()
                ;
 }
 
