@@ -14,7 +14,7 @@ Serial serial_port = null;
 // Configuration constants
 
 //static final String COM_PORT  = "COM4";
-static final int COM_BAUDRATE = 38400;
+static final int COM_BAUDRATE = 9600;
 static final int SCREEN_W = 1180;
 static final int SCREEN_H = 500;
 
@@ -32,11 +32,13 @@ Textlabel myTextlabelB;
 Textlabel myTextlabelC;
 DropdownList d1;
 JSONObject tx_json;
+JSONObject max_temp_json;
 Textarea myTextarea;
 Textarea myTextarea2;
 Println console;
 Knob temperatureKnob;
 Knob pressureKnob;
+//JSONObject changeValveState;
 
 // serial port buttons
 String serial_list;                // list of serial ports
@@ -48,6 +50,8 @@ int num_serial_ports = 0;          // number of serial ports in the list
 float press_sensor_1         = 0;
 float temp_sensor_1          = 0;
 int   valve_state_1          =0;
+float temp_target= 0;
+float max_temp;
 JSONArray array_values = new JSONArray();
 int uControllerState = 0;
 
@@ -81,7 +85,8 @@ void serialEvent(Serial serial_port) {
         // Get the values of the accelerometer
         press_sensor_1 = json.getFloat("press_sensor_1");
         temp_sensor_1 = json.getFloat("temp_sensor_1");
-        valve_state_1= json.getInt("valve_state_1");
+        valve_state_1= json.getInt("temp_target");
+        temp_target=json.getInt("valve_state_1");
         uControllerState = json.getInt("uControllerState");
         myTextarea2.setText(json.toString());
      //update knobs
@@ -115,6 +120,36 @@ void serialEvent(Serial serial_port) {
   }
   catch (Exception e) {
     println("Initialization exception" + e);
+  }
+  
+ 
+  //changeValveState= {"ValveState":0}
+   
+  //if (temp_sensor_1 >= 30)
+  //{
+   //println("now sending number: "+temp_sensor_1);
+    //serial_port.write(Float.toString(temp_sensor_1));
+  // write any charcter that marks the end of a number
+  //serial_port.write("Close the Valve");
+  //}
+  
+//int number = (int) random(100);
+  // debug
+  //println("now sending number: "+number);
+  // send number
+  //serial_port.write(Integer.toString(number));
+  // write any charcter that marks the end of a number
+  //serial_port.write('e');
+
+  try {
+    // get message till line break (ASCII > 13)
+    String message =serial_port.readStringUntil(13);
+    // just if there is data
+    if (message != null) {
+      println("message received: "+trim(message));
+    }
+  }
+  catch (Exception e) {
   }
 }
 
@@ -197,6 +232,28 @@ println("before:",valve_state_1);
   .setColorBackground(color(#54f367))
   .setColorLabel(color(#000000))
   ;
+  
+  
+   cp5.addSlider("slider")
+  .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+310)
+     .setSize(100,25)
+     .setRange(0,200)
+     .setValue(128)
+     ;
+     
+  cp5.getController("slider").getValueLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+  //cp5.getController("slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+  
+  cp5.addButton("SetMaxTemp")
+  .setPosition(tunning_values_x_pos+275,tunning_values_y_pos)
+  .setSize(100,25)
+  .setValue(0)
+  .setColorActive(color(#6fe619))
+  .setColorForeground(color(#216329))
+  .setColorBackground(color(#54f367))
+  .setColorLabel(color(#000000))
+  ;
+
 
 cp5.addTextlabel("label")
                     .setText("Logs")
@@ -271,6 +328,8 @@ public void transmitValues(int theValue) {
   println("Transmit values: "+theValue);
   if(serial_port != null)
   {
+    
+    
     // Why is this so slow? 2.5 seconds.
     serial_port.write(tx_json.toString().replace("\n", "").replace("\r", ""));
     serial_port.write('\n');
@@ -281,11 +340,40 @@ public void transmitValues(int theValue) {
   }
 }
 
+public void transmitJSON(JSONObject theValue) {
+  println("Transmit values: "+theValue);
+  if(serial_port != null)
+  {
+    
+    
+    // Why is this so slow? 2.5 seconds.
+    serial_port.write(max_temp_json.toString().replace("\n", "").replace("\r", ""));
+    serial_port.write('\n');
+
+    println("Sending JSON though the UART: "+max_temp_json.toString().replace("\n", "").replace("\r", ""));
+    println(max_temp_json.toString().length());
+    delay(100);
+  }
+}
+
   public void refreshPorts(int theValue) {
     println("Refresh ports: "+theValue);
     customize(d1);
   }
 
+
+public void SetMaxTemp()
+{
+  max_temp_json = new JSONObject();
+
+  max_temp_json.setFloat("max_temp", max_temp);
+
+  //json.setString("name", "Lion");
+
+  //saveJSONObject(max_temp_json, "data/new.json"); 
+  
+ transmitJSON(max_temp_json);
+}
 
   public void consoleClearFunc()
   {
@@ -297,6 +385,14 @@ public void transmitValues(int theValue) {
         }
     
   }
+  
+  void slider(float value) {
+  max_temp = value;
+  println("Max Temperature should be set: "+max_temp);
+  
+  //max_temp=cp5.getController("slider").getValue();
+//println(max_temp);
+}
 
   void connect(boolean theFlag) {
     boolean port_error = false;
