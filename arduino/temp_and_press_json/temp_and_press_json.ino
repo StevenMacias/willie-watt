@@ -56,7 +56,8 @@ void loop() {
 
   doc["press_sensor_1"] = "1";
   doc["temp_sensor_1"] = t;
-  doc["uControllerState"] = 1;
+  doc["valve_state_1"] = 1;
+  doc["uControllerState"] = 20;
 
   serializeJson(doc, Serial);
   Serial.println("\n");

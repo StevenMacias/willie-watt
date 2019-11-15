@@ -14,7 +14,7 @@ Serial serial_port = null;
 // Configuration constants
 
 //static final String COM_PORT  = "COM4";
-static final int COM_BAUDRATE = 38400;
+static final int COM_BAUDRATE = 9600;
 static final int SCREEN_W = 1180;
 static final int SCREEN_H = 500;
 
