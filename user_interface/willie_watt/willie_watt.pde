@@ -17,8 +17,8 @@ Serial serial_port = null;
 
 //static final String COM_PORT  = "COM4";
 static final int COM_BAUDRATE = 9600;
-static final int SCREEN_W = 1180;
-static final int SCREEN_H = 500;
+static final int SCREEN_W = 1580;
+static final int SCREEN_H = 800;
 
 
 // Window constants
@@ -35,6 +35,8 @@ Textlabel myTextlabelC;
 DropdownList d1;
 JSONObject tx_json;
 JSONObject max_temp_json;
+JSONObject startstop_json;
+JSONObject close_all_json;
 Textarea myTextarea;
 Textarea myTextarea2;
 Println console;
@@ -43,6 +45,10 @@ Knob pressureKnob;
 Knob outTemperatureKnob;
 Knob outPressureKnob;
 //JSONObject changeValveState;
+Toggle startButton;
+Button closeAllValve;
+Button setMaxTemp;
+Boolean closeValve = false;
 
 // serial port buttons
 String serial_list;                // list of serial ports
@@ -183,7 +189,7 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setHeight(200)
   .setBarHeight(25)
   .setWidth(110);
-  ;
+  
   customize(d1);
 
   // create a toggle and change the default look to a (on/off) switch look
@@ -193,9 +199,26 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setValue(false)
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
-  .setColorActive(color(#f35454))
-  ;
-println("before:",valve_state_1);  
+  .setColorActive(color(#f35454));
+  
+   startButton = cp5.addToggle("Start")
+  .setPosition(tunning_values_x_pos+120,tunning_values_y_pos-75)
+  .setSize(100,35)
+  .setValue(false)
+  .setMode(ControlP5.SWITCH)
+  .setColorBackground(color(#5c5c5c))
+  .setColorActive(color(#f35454));
+  
+  
+  closeAllValve =cp5.addButton("closeAllValve")
+  .setPosition(tunning_values_x_pos+225,tunning_values_y_pos-75)
+  .setSize(100,35)
+  .setValue(1)
+  .setColorActive(color(#6fe619))
+  .setColorForeground(color(#216329))
+  .setColorBackground(color(#54f367))
+  .setColorLabel(color(#000000));
+
   cp5.addToggle("valve1")
   .setPosition(tunning_values_x_pos+600,tunning_values_y_pos)
   .setSize(50,25)
@@ -203,8 +226,7 @@ println("before:",valve_state_1);
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
   .setColorActive(color(#f35454))
-  .lock()
-  ;
+  .lock();
 
   cp5.addButton("refreshPorts")
   .setPosition(tunning_values_x_pos+150,tunning_values_y_pos)
@@ -213,8 +235,7 @@ println("before:",valve_state_1);
   .setColorActive(color(#6fe619))
   .setColorForeground(color(#216329))
   .setColorBackground(color(#54f367))
-  .setColorLabel(color(#000000))
-  ;
+  .setColorLabel(color(#000000));
 
   cp5.addButton("consoleClearFunc")
   .setPosition(tunning_values_x_pos,tunning_values_y_pos+310)
@@ -223,21 +244,17 @@ println("before:",valve_state_1);
   .setColorActive(color(#6fe619))
   .setColorForeground(color(#216329))
   .setColorBackground(color(#54f367))
-  .setColorLabel(color(#000000))
-  ;
+  .setColorLabel(color(#000000));
   
-  
-   cp5.addSlider("slider")
+  cp5.addSlider("slider")
   .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+310)
-     .setSize(100,25)
-     .setRange(0,200)
-     .setValue(128)
-     ;
+  .setSize(100,25)
+  .setRange(0,200)
+  .setValue(128);
      
-  //cp5.getController("slider").getValueLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
   cp5.getController("slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
   
-  cp5.addButton("SetMaxTemp")
+  setMaxTemp=cp5.addButton("SetMaxTemp")
   .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+350)
   .setSize(100,25)
   .setValue(0)
@@ -245,15 +262,13 @@ println("before:",valve_state_1);
   .setColorForeground(color(#216329))
   .setColorBackground(color(#54f367))
   .setColorLabel(color(#000000))
-  ;
-
+  .lock();
 
 cp5.addTextlabel("label")
-                    .setText("Logs")
-                    .setPosition(tunning_values_x_pos,tunning_values_y_pos+75)
-                    .setColorValue(0xffffff00)
-                    .setFont(createFont("Georgia",20))
-                    ;
+.setText("Logs")
+.setPosition(tunning_values_x_pos,tunning_values_y_pos+75)
+.setColorValue(0xffffff00)
+.setFont(createFont("Georgia",20));
 
                     
   myTextarea = cp5.addTextarea("txt")
@@ -264,8 +279,8 @@ cp5.addTextlabel("label")
                   .setColor(color(#54f367))
                   .setColorBackground(color(#383a39))
                   .setColorForeground(color(#216329));
-  ;
-  console = cp5.addConsole(myTextarea);//
+                  
+ console = cp5.addConsole(myTextarea);
 
 myTextlabelB = new Textlabel(cp5,"Input",tunning_values_x_pos+700,tunning_values_y_pos+75,400,200);
 myTextlabelB.setColorValue(0xffffff00);
@@ -357,7 +372,6 @@ public void transmitValues(int theValue) {
   if(serial_port != null)
   {
     
-    
     // Why is this so slow? 2.5 seconds.
     serial_port.write(tx_json.toString().replace("\n", "").replace("\r", ""));
     serial_port.write('\n');
@@ -368,17 +382,27 @@ public void transmitValues(int theValue) {
   }
 }
 
-public void transmitJSON(JSONObject theValue) {
-  println("Maximum temperature should be set to: "+theValue);
+public void transmitAllJSON() {
+ 
+  JSONObject _json = new JSONObject();
+ 
   if(serial_port != null)
   {
-    
-    
+    _json.setFloat("start_stop",startButton.getValue());
+    if(startButton.getValue() == 1)
+{
+     _json.setFloat("max temp", max_temp);
+     _json.setFloat("close all valve",0);
+     if (closeValve)
+     {
+     _json.setFloat("close all valve",1);
+     }
+}
+  
     // Why is this so slow? 2.5 seconds.
-    serial_port.write(max_temp_json.toString().replace("\n", "").replace("\r", ""));
+    serial_port.write(_json.toString().replace("\n", "").replace("\r", ""));
     serial_port.write('\n');
 
-    println("Sending JSON though the UART: "+max_temp_json.toString().replace("\n", "").replace("\r", ""));
     delay(100);
   }
 }
@@ -390,18 +414,38 @@ public void transmitJSON(JSONObject theValue) {
 
 
 public void SetMaxTemp()
-{
-  max_temp_json = new JSONObject();
-
-  max_temp_json.setFloat("max_temp", max_temp);
-
-  //json.setString("name", "Lion");
-
-  //saveJSONObject(max_temp_json, "data/new.json"); 
-  
- transmitJSON(max_temp_json);
+{ 
+ transmitAllJSON();
 }
 
+  public void Start()
+  {
+  transmitAllJSON();
+  
+  if(startButton.getValue() == 0)
+  {
+    cp5.getController("SetMaxTemp").lock();
+    cp5.getController("closeAllValve").lock();
+    cp5.getController("Start").setColorActive(color(#f35454));
+    cp5.getController("Start").setColorBackground(color(#5c5c5c));
+  }
+  else
+  {
+    cp5.getController("SetMaxTemp").unlock();
+    cp5.getController("closeAllValve").unlock();
+    cp5.getController("Start").setColorActive(color(#54f367));
+    cp5.getController("Start").setColorBackground(color(#5c5c5c));
+  }
+  }
+  
+  public void closeAllValve()
+  {
+  closeValve = true;
+  transmitAllJSON();
+  closeValve = false;
+  
+  }
+  
   public void consoleClearFunc()
   {
     try{
@@ -435,11 +479,13 @@ public void SetMaxTemp()
         if(port_error == false)
         {
           lockButtons();
+          
         }else
         {
           unlockButtons();
           //put the switch in off position
           cp5.getController("connect").setValue(0);
+          
         }
 
       }
