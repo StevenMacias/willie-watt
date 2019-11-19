@@ -5,7 +5,9 @@ Purpose: Develop a user interface for a steam sterilization system.
 
 @author Jon Ravn, Steven Macías, Sultan Tariq 
 @version 1.0 01/11/2019
+JSON: {"press_sensor_1": 120.00,"temp_sensor_1": 110,"press_sensor_2": 120.00,"temp_sensor_2": 110,"valve_state_1":0,"temp_target":120,"uControllerState": 20}\n
 */
+
 import controlP5.*;
 ControlP5 cp5;
 import processing.serial.*;
@@ -38,6 +40,8 @@ Textarea myTextarea2;
 Println console;
 Knob temperatureKnob;
 Knob pressureKnob;
+Knob outTemperatureKnob;
+Knob outPressureKnob;
 //JSONObject changeValveState;
 
 // serial port buttons
@@ -48,8 +52,10 @@ int num_serial_ports = 0;          // number of serial ports in the list
 
 // variables for the coordinates
 float press_sensor_1         = 0;
+float press_sensor_2         = 0;
 float temp_sensor_1          = 0;
-int   valve_state_1          =0;
+float temp_sensor_2          = 0;
+int   valve_state_1           =0;
 float temp_target= 0;
 float max_temp;
 JSONArray array_values = new JSONArray();
@@ -84,14 +90,18 @@ void serialEvent(Serial serial_port) {
         //array_values = json.getJSONArray("array_values");
         // Get the values of the accelerometer
         press_sensor_1 = json.getFloat("press_sensor_1");
+        press_sensor_2 = json.getFloat("press_sensor_2");
         temp_sensor_1 = json.getFloat("temp_sensor_1");
+        temp_sensor_2 = json.getFloat("temp_sensor_2");
         valve_state_1= json.getInt("temp_target");
         temp_target=json.getInt("valve_state_1");
         uControllerState = json.getInt("uControllerState");
         myTextarea2.setText(json.toString());
      //update knobs
      temperatureKnob.setValue(temp_sensor_1);
+     outTemperatureKnob.setValue(temp_sensor_2);
      pressureKnob.setValue(press_sensor_1);
+     outPressureKnob.setValue(press_sensor_2);
      
      
      if(valve_state_1==0){
@@ -123,23 +133,6 @@ void serialEvent(Serial serial_port) {
   }
   
  
-  //changeValveState= {"ValveState":0}
-   
-  //if (temp_sensor_1 >= 30)
-  //{
-   //println("now sending number: "+temp_sensor_1);
-    //serial_port.write(Float.toString(temp_sensor_1));
-  // write any charcter that marks the end of a number
-  //serial_port.write("Close the Valve");
-  //}
-  
-//int number = (int) random(100);
-  // debug
-  //println("now sending number: "+number);
-  // send number
-  //serial_port.write(Integer.toString(number));
-  // write any charcter that marks the end of a number
-  //serial_port.write('e');
 
   try {
     // get message till line break (ASCII > 13)
@@ -241,11 +234,11 @@ println("before:",valve_state_1);
      .setValue(128)
      ;
      
-  cp5.getController("slider").getValueLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
-  //cp5.getController("slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+  //cp5.getController("slider").getValueLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+  cp5.getController("slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
   
   cp5.addButton("SetMaxTemp")
-  .setPosition(tunning_values_x_pos+275,tunning_values_y_pos)
+  .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+350)
   .setSize(100,25)
   .setValue(0)
   .setColorActive(color(#6fe619))
@@ -322,6 +315,41 @@ myTextlabelB.setFont(createFont("Georgia",20));
                .setDragDirection(Knob.HORIZONTAL)
                .lock()
                ;
+               
+               
+                outTemperatureKnob = cp5.addKnob("Out Temperature")
+               .setFont(createFont("times", 10))
+               .setRange(0,200)
+               .setValue(temp_sensor_2)
+               .setPosition(tunning_values_x_pos+400,tunning_values_y_pos+250)
+               .setRadius(50)
+               .setNumberOfTickMarks(10)
+               .setTickMarkLength(4)
+               .snapToTickMarks(false)
+               .setColorForeground(color(#54f367))
+               .setColorBackground(color(#000066))
+               .setColorActive(color(255,255,0))
+               .setDragDirection(Knob.VERTICAL)
+               .setResolution(0.01)
+               .lock()
+               .setMin(0)
+               .setMax(200)
+               ;
+               
+                outPressureKnob = cp5.addKnob("Out Pressure")
+               .setRange(0,20)
+               .setValue(press_sensor_2)
+               .setPosition(tunning_values_x_pos+590,tunning_values_y_pos+250)
+               .setRadius(50)
+               .setNumberOfTickMarks(10)
+               .setTickMarkLength(4)
+               .snapToTickMarks(false)
+               .setColorForeground(color(#54f367))
+               .setColorBackground(color(#216329))
+               .setColorActive(color(255,255,0))
+               .setDragDirection(Knob.HORIZONTAL)
+               .lock()
+               ;
 }
 
 public void transmitValues(int theValue) {
@@ -341,7 +369,7 @@ public void transmitValues(int theValue) {
 }
 
 public void transmitJSON(JSONObject theValue) {
-  println("Transmit values: "+theValue);
+  println("Maximum temperature should be set to: "+theValue);
   if(serial_port != null)
   {
     
@@ -351,7 +379,6 @@ public void transmitJSON(JSONObject theValue) {
     serial_port.write('\n');
 
     println("Sending JSON though the UART: "+max_temp_json.toString().replace("\n", "").replace("\r", ""));
-    println(max_temp_json.toString().length());
     delay(100);
   }
 }
@@ -388,10 +415,7 @@ public void SetMaxTemp()
   
   void slider(float value) {
   max_temp = value;
-  println("Max Temperature should be set: "+max_temp);
   
-  //max_temp=cp5.getController("slider").getValue();
-//println(max_temp);
 }
 
   void connect(boolean theFlag) {
