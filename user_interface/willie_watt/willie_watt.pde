@@ -3,7 +3,7 @@ Willie Watt User Interface
 willie_watt.pde
 Purpose: Develop a user interface for a steam sterilization system.
 
-@author Jon Ravn, Steven Macías, Sultan Tariq 
+@author Jon Ravn, Steven Macías, Sultan Tariq
 @version 1.0 01/11/2019
 JSON: {"press_sensor_1": 120.00,"temp_sensor_1": 110,"press_sensor_2": 120.00,"temp_sensor_2": 110,"valve_state_1":0,"temp_target":120,"uControllerState": 20}\n
 */
@@ -109,27 +109,27 @@ void serialEvent(Serial serial_port) {
      outTemperatureKnob.setValue(temp_sensor_2);
      pressureKnob.setValue(press_sensor_1);
      outPressureKnob.setValue(press_sensor_2);
-     
-     
+
+
      if(valve_state_1==0){
         cp5.getController("valve1").setColorActive(color(#f35454));
         cp5.getController("valve1").setColorBackground(color(#5c5c5c));
      }
-     
+
      else{
       cp5.getController("valve1").setColorActive(color(#54f367));
       cp5.getController("valve1").setColorBackground(color(#5c5c5c));
      }
-     
+
      cp5.getController("valve1").setValue(valve_state_1);
-     
+
      if(temp_sensor_1 > 180)
      temperatureKnob.setColorForeground(color(#ff0000));
-      
+
      if(press_sensor_1 > 15)
      pressureKnob.setColorForeground(color(#ff0000));
-  
-      } 
+
+      }
     } else
     {
       println("Buffer is null");
@@ -138,8 +138,8 @@ void serialEvent(Serial serial_port) {
   catch (Exception e) {
     println("Initialization exception" + e);
   }
-  
- 
+
+
 
   try {
     // get message till line break (ASCII > 13)
@@ -190,7 +190,7 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setHeight(200)
   .setBarHeight(25)
   .setWidth(110);
-  
+
   customize(d1);
 
   // create a toggle and change the default look to a (on/off) switch look
@@ -201,7 +201,7 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
   .setColorActive(color(#f35454));
-  
+
    startButton = cp5.addToggle("Start")
   .setPosition(tunning_values_x_pos+120,tunning_values_y_pos-75)
   .setSize(100,35)
@@ -209,8 +209,8 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
   .setColorActive(color(#f35454));
-  
-  
+
+
   closeAllValve =cp5.addButton("closeAllValve")
   .setPosition(tunning_values_x_pos+225,tunning_values_y_pos-75)
   .setSize(100,35)
@@ -246,15 +246,15 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setColorForeground(color(#216329))
   .setColorBackground(color(#54f367))
   .setColorLabel(color(#000000));
-  
+
   cp5.addSlider("slider")
   .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+310)
   .setSize(100,25)
   .setRange(0,200)
   .setValue(128);
-     
+
   cp5.getController("slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
-  
+
   setMaxTemp=cp5.addButton("SetMaxTemp")
   .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+350)
   .setSize(100,25)
@@ -271,7 +271,7 @@ cp5.addTextlabel("label")
 .setColorValue(0xffffff00)
 .setFont(createFont("Georgia",20));
 
-                    
+
   myTextarea = cp5.addTextarea("txt")
                   .setPosition(tunning_values_x_pos,tunning_values_y_pos+100)
                   .setSize(380, 200)
@@ -280,13 +280,13 @@ cp5.addTextlabel("label")
                   .setColor(color(#54f367))
                   .setColorBackground(color(#383a39))
                   .setColorForeground(color(#216329));
-                  
+
  console = cp5.addConsole(myTextarea);
 
 myTextlabelB = new Textlabel(cp5,"Input",tunning_values_x_pos+700,tunning_values_y_pos+75,400,200);
 myTextlabelB.setColorValue(0xffffff00);
 myTextlabelB.setFont(createFont("Georgia",20));
-                    
+
   myTextarea2 = cp5.addTextarea("rx_json_textarea")
                   .setPosition(tunning_values_x_pos+700,tunning_values_y_pos+100)
                   .setSize(380, 200)
@@ -297,7 +297,7 @@ myTextlabelB.setFont(createFont("Georgia",20));
                   .setColorForeground(color(#216329));
   ;
 
-               
+
                 temperatureKnob = cp5.addKnob("Temperature")
                .setFont(createFont("times", 10))
                .setRange(0,200)
@@ -316,7 +316,7 @@ myTextlabelB.setFont(createFont("Georgia",20));
                .setMin(0)
                .setMax(200)
                ;
-               
+
                  pressureKnob = cp5.addKnob("Pressure")
                .setRange(0,20)
                .setValue(press_sensor_1)
@@ -331,8 +331,8 @@ myTextlabelB.setFont(createFont("Georgia",20));
                .setDragDirection(Knob.HORIZONTAL)
                .lock()
                ;
-               
-               
+
+
                 outTemperatureKnob = cp5.addKnob("Out Temperature")
                .setFont(createFont("times", 10))
                .setRange(0,200)
@@ -351,7 +351,7 @@ myTextlabelB.setFont(createFont("Georgia",20));
                .setMin(0)
                .setMax(200)
                ;
-               
+
                 outPressureKnob = cp5.addKnob("Out Pressure")
                .setRange(0,20)
                .setValue(press_sensor_2)
@@ -372,7 +372,7 @@ public void transmitValues(int theValue) {
   println("Transmit values: "+theValue);
   if(serial_port != null)
   {
-    
+
     // Why is this so slow? 2.5 seconds.
     serial_port.write(tx_json.toString().replace("\n", "").replace("\r", ""));
     serial_port.write('\n');
@@ -384,9 +384,9 @@ public void transmitValues(int theValue) {
 }
 
 public void transmitAllJSON() {
- 
+
   JSONObject _json = new JSONObject();
- 
+
   if(serial_port != null)
   {
     _json.setFloat("start_stop",startButton.getValue());
@@ -399,7 +399,7 @@ public void transmitAllJSON() {
      _json.setFloat("close all valve",1);
      }
 }
-  
+
     // Why is this so slow? 2.5 seconds.
     serial_port.write(_json.toString().replace("\n", "").replace("\r", ""));
     serial_port.write('\n');
@@ -415,14 +415,14 @@ public void transmitAllJSON() {
 
 
 public void SetMaxTemp()
-{ 
+{
  transmitAllJSON();
 }
 
   public void Start()
   {
   transmitAllJSON();
-  
+
   if(startButton.getValue() == 0)
   {
     cp5.getController("SetMaxTemp").lock();
@@ -438,15 +438,15 @@ public void SetMaxTemp()
     cp5.getController("Start").setColorBackground(color(#5c5c5c));
   }
   }
-  
+
   public void closeAllValve()
   {
   closeValve = true;
   transmitAllJSON();
   closeValve = false;
-  
+
   }
-  
+
   public void consoleClearFunc()
   {
     try{
@@ -455,12 +455,12 @@ public void SetMaxTemp()
         catch (Exception e) {
           println(e);
         }
-    
+
   }
-  
+
   void slider(float value) {
   max_temp = value;
-  
+
 }
 
   void connect(boolean theFlag) {
@@ -480,13 +480,13 @@ public void SetMaxTemp()
         if(port_error == false)
         {
           lockButtons();
-          
+
         }else
         {
           unlockButtons();
           //put the switch in off position
           cp5.getController("connect").setValue(0);
-          
+
         }
 
       }
@@ -575,6 +575,6 @@ public void SetMaxTemp()
   void draw()
   {
     background(background_color);
-    myTextlabelB.draw(this); 
-    myTextlabelC.draw(this); 
+    myTextlabelB.draw(this);
+    myTextlabelC.draw(this);
   }
