@@ -24,15 +24,13 @@ static final int SCREEN_H = 800;
 
 // Window constants
 static final int text_size          = 12;
-static final int background_color   = 0;
-
+PImage img;
 
 static final int tunning_values_x_pos    = 60;
 static final int tunning_values_y_pos    = 90;
 static final boolean DEBUG_ON            = false;
 
 Textlabel myTextlabelB;
-Textlabel myTextlabelC;
 DropdownList d1;
 JSONObject tx_json;
 JSONObject max_temp_json;
@@ -111,13 +109,13 @@ void serialEvent(Serial serial_port) {
      outPressureKnob.setValue(press_sensor_2);
 
 
-     if(valve_state_1==0){
-        cp5.getController("valve1").setColorActive(color(#f35454));
+     /*if(valve_state_1==0){
+        cp5.getController("valve1").setColorActive(color(#3e44ec));
         cp5.getController("valve1").setColorBackground(color(#5c5c5c));
      }
 
      else{
-      cp5.getController("valve1").setColorActive(color(#54f367));
+      cp5.getController("valve1").setColorActive(color(#57ebe0));
       cp5.getController("valve1").setColorBackground(color(#5c5c5c));
      }
 
@@ -128,7 +126,7 @@ void serialEvent(Serial serial_port) {
 
      if(press_sensor_1 > 15)
      pressureKnob.setColorForeground(color(#ff0000));
-
+     */
       }
     } else
     {
@@ -136,7 +134,7 @@ void serialEvent(Serial serial_port) {
     }
   }
   catch (Exception e) {
-    println("Initialization exception" + e);
+    println("Something went wrong in serialEvent: " + e);
   }
 
 
@@ -170,21 +168,18 @@ void setup() {
 
   cp5 = new ControlP5(this);
 
-myTextlabelC = new Textlabel(cp5,"Sterilize-It",tunning_values_x_pos+350,5,400,200);
-myTextlabelC.setColorValue(0xffffff00);
-myTextlabelC.setFont(createFont("Georgia",50));
 
   // create a DropdownList,
   d1 = cp5.addDropdownList("serialPortList")
   .setPosition(tunning_values_x_pos, tunning_values_y_pos)
   .setOpen(false)
-  .setBackgroundColor(color(#216329))
-  .setColorActive(color(#216329))
-  .setColorBackground(color(#54f367))
-  .setColorCaptionLabel(color(#216329))
-  .setColorForeground(color(#216329))
+  .setBackgroundColor(color(#0670FF))
+  .setColorActive(color(#0670FF))
+  .setColorBackground(color(#57ebe0))
+  .setColorCaptionLabel(color(#0670FF))
+  .setColorForeground(color(#0670FF))
   .setColorLabel(color(#000000))
-  .setColorValue(color(#216329))
+  .setColorValue(color(#0670FF))
   .setColorValueLabel(color(#000000))
   .setItemHeight(25)
   .setHeight(200)
@@ -200,7 +195,7 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setValue(false)
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
-  .setColorActive(color(#f35454));
+  .setColorActive(color(#3e44ec));
 
    startButton = cp5.addToggle("Start")
   .setPosition(tunning_values_x_pos+120,tunning_values_y_pos-75)
@@ -208,7 +203,7 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setValue(false)
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
-  .setColorActive(color(#f35454));
+  .setColorActive(color(#3e44ec));
 
 
   closeAllValve =cp5.addButton("closeAllValve")
@@ -216,26 +211,26 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setSize(100,35)
   .setValue(1)
   .setColorActive(color(#6fe619))
-  .setColorForeground(color(#216329))
-  .setColorBackground(color(#54f367))
+  .setColorForeground(color(#0670FF))
+  .setColorBackground(color(#57ebe0))
   .setColorLabel(color(#000000));
 
-  cp5.addToggle("valve1")
+  /*cp5.addToggle("valve1")
   .setPosition(tunning_values_x_pos+600,tunning_values_y_pos)
   .setSize(50,25)
   .setValue(false)
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
-  .setColorActive(color(#f35454))
-  .lock();
+  .setColorActive(color(#3e44ec))
+  .lock();*/
 
   cp5.addButton("refreshPorts")
   .setPosition(tunning_values_x_pos+150,tunning_values_y_pos)
   .setSize(100,25)
   .setValue(0)
   .setColorActive(color(#6fe619))
-  .setColorForeground(color(#216329))
-  .setColorBackground(color(#54f367))
+  .setColorForeground(color(#0670FF))
+  .setColorBackground(color(#57ebe0))
   .setColorLabel(color(#000000));
 
   cp5.addButton("consoleClearFunc")
@@ -243,8 +238,17 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setSize(100,25)
   .setValue(0)
   .setColorActive(color(#6fe619))
-  .setColorForeground(color(#216329))
-  .setColorBackground(color(#54f367))
+  .setColorForeground(color(#0670FF))
+  .setColorBackground(color(#57ebe0))
+  .setColorLabel(color(#000000));
+
+  cp5.addButton("connectSimulation")
+  .setPosition(tunning_values_x_pos,tunning_values_y_pos+350)
+  .setSize(100,25)
+  .setValue(0)
+  .setColorActive(color(#6fe619))
+  .setColorForeground(color(#0670FF))
+  .setColorBackground(color(#9b06ff))
   .setColorLabel(color(#000000));
 
   cp5.addSlider("slider")
@@ -260,16 +264,16 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setSize(100,25)
   .setValue(0)
   .setColorActive(color(#6fe619))
-  .setColorForeground(color(#216329))
-  .setColorBackground(color(#54f367))
+  .setColorForeground(color(#0670FF))
+  .setColorBackground(color(#57ebe0))
   .setColorLabel(color(#000000))
   .lock();
 
 cp5.addTextlabel("label")
 .setText("Logs")
 .setPosition(tunning_values_x_pos,tunning_values_y_pos+75)
-.setColorValue(0xffffff00)
-.setFont(createFont("Georgia",20));
+.setColorValue(#FFFFFF)
+.setFont(createFont("Georgia",14));
 
 
   myTextarea = cp5.addTextarea("txt")
@@ -277,15 +281,15 @@ cp5.addTextlabel("label")
                   .setSize(380, 200)
                   .setFont(createFont("arial", 10))
                   .setLineHeight(14)
-                  .setColor(color(#54f367))
+                  .setColor(color(#57ebe0))
                   .setColorBackground(color(#383a39))
-                  .setColorForeground(color(#216329));
+                  .setColorForeground(color(#0670ff));
 
  console = cp5.addConsole(myTextarea);
 
 myTextlabelB = new Textlabel(cp5,"Input",tunning_values_x_pos+700,tunning_values_y_pos+75,400,200);
-myTextlabelB.setColorValue(0xffffff00);
-myTextlabelB.setFont(createFont("Georgia",20));
+myTextlabelB.setColorValue(#FFFFFF);
+myTextlabelB.setFont(createFont("Georgia",14));
 
   myTextarea2 = cp5.addTextarea("rx_json_textarea")
                   .setPosition(tunning_values_x_pos+700,tunning_values_y_pos+100)
@@ -294,7 +298,7 @@ myTextlabelB.setFont(createFont("Georgia",20));
                   .setLineHeight(14)
                   .setColor(color(#54f3d3))
                   .setColorBackground(color(#383a39))
-                  .setColorForeground(color(#216329));
+                  .setColorForeground(color(#0670FF));
   ;
 
 
@@ -302,13 +306,13 @@ myTextlabelB.setFont(createFont("Georgia",20));
                .setFont(createFont("times", 10))
                .setRange(0,200)
                .setValue(temp_sensor_1)
-               .setPosition(tunning_values_x_pos+400,tunning_values_y_pos+100)
+               .setPosition(tunning_values_x_pos+410,tunning_values_y_pos+100)
                .setRadius(50)
                .setNumberOfTickMarks(10)
                .setTickMarkLength(4)
                .snapToTickMarks(false)
-               .setColorForeground(color(#54f367))
-               .setColorBackground(color(#000066))
+               .setColorForeground(color(#eb5757))
+               .setColorBackground(color(#616061))
                .setColorActive(color(255,255,0))
                .setDragDirection(Knob.VERTICAL)
                .setResolution(0.01)
@@ -320,13 +324,13 @@ myTextlabelB.setFont(createFont("Georgia",20));
                  pressureKnob = cp5.addKnob("Pressure")
                .setRange(0,20)
                .setValue(press_sensor_1)
-               .setPosition(tunning_values_x_pos+590,tunning_values_y_pos+100)
+               .setPosition(tunning_values_x_pos+570,tunning_values_y_pos+100)
                .setRadius(50)
                .setNumberOfTickMarks(10)
                .setTickMarkLength(4)
                .snapToTickMarks(false)
-               .setColorForeground(color(#54f367))
-               .setColorBackground(color(#216329))
+               .setColorForeground(color(#57ebe0))
+               .setColorBackground(color(#616061))
                .setColorActive(color(255,255,0))
                .setDragDirection(Knob.HORIZONTAL)
                .lock()
@@ -337,13 +341,13 @@ myTextlabelB.setFont(createFont("Georgia",20));
                .setFont(createFont("times", 10))
                .setRange(0,200)
                .setValue(temp_sensor_2)
-               .setPosition(tunning_values_x_pos+400,tunning_values_y_pos+250)
+               .setPosition(tunning_values_x_pos+410,tunning_values_y_pos+250)
                .setRadius(50)
                .setNumberOfTickMarks(10)
                .setTickMarkLength(4)
                .snapToTickMarks(false)
-               .setColorForeground(color(#54f367))
-               .setColorBackground(color(#000066))
+               .setColorForeground(color(#eb5757))
+               .setColorBackground(color(#616061))
                .setColorActive(color(255,255,0))
                .setDragDirection(Knob.VERTICAL)
                .setResolution(0.01)
@@ -355,17 +359,20 @@ myTextlabelB.setFont(createFont("Georgia",20));
                 outPressureKnob = cp5.addKnob("Out Pressure")
                .setRange(0,20)
                .setValue(press_sensor_2)
-               .setPosition(tunning_values_x_pos+590,tunning_values_y_pos+250)
+               .setPosition(tunning_values_x_pos+570,tunning_values_y_pos+250)
                .setRadius(50)
                .setNumberOfTickMarks(10)
                .setTickMarkLength(4)
                .snapToTickMarks(false)
-               .setColorForeground(color(#54f367))
-               .setColorBackground(color(#216329))
+               .setColorForeground(color(#57ebe0))
+               .setColorBackground(color(#616061))
                .setColorActive(color(255,255,0))
                .setDragDirection(Knob.HORIZONTAL)
                .lock()
                ;
+   myTextlabelB.draw(this);
+   img = loadImage("img/logo-inv.png");
+
 }
 
 public void transmitValues(int theValue) {
@@ -427,14 +434,14 @@ public void SetMaxTemp()
   {
     cp5.getController("SetMaxTemp").lock();
     cp5.getController("closeAllValve").lock();
-    cp5.getController("Start").setColorActive(color(#f35454));
+    cp5.getController("Start").setColorActive(color(#3e44ec));
     cp5.getController("Start").setColorBackground(color(#5c5c5c));
   }
   else
   {
     cp5.getController("SetMaxTemp").unlock();
     cp5.getController("closeAllValve").unlock();
-    cp5.getController("Start").setColorActive(color(#54f367));
+    cp5.getController("Start").setColorActive(color(#57ebe0));
     cp5.getController("Start").setColorBackground(color(#5c5c5c));
   }
   }
@@ -455,7 +462,22 @@ public void SetMaxTemp()
         catch (Exception e) {
           println(e);
         }
+  }
 
+  public void connectSimulation(float clicked)
+  {
+    println("Connect simulation: "+clicked);
+    if(clicked==0 && serial_port == null)
+    {
+    try{
+          serial_port = new Serial(this, "/dev/pts/3", COM_BAUDRATE);
+          serial_port.clear();
+          serial_port.bufferUntil('\n');
+        }
+        catch (Exception e) {
+          println(e);
+        }
+    }
   }
 
   void slider(float value) {
@@ -503,7 +525,7 @@ public void SetMaxTemp()
 
   void lockButtons()
   {
-    cp5.getController("connect").setColorActive(color(#54f367));
+    cp5.getController("connect").setColorActive(color(#57ebe0));
     cp5.getController("connect").setColorBackground(color(#5c5c5c));
     cp5.getController("serialPortList").setLock(true);
     cp5.getController("serialPortList").setColorBackground(color(#5c5c5c));
@@ -513,11 +535,11 @@ public void SetMaxTemp()
 
   void unlockButtons()
   {
-    cp5.getController("connect").setColorActive(color(#f35454));
+    cp5.getController("connect").setColorActive(color(#3e44ec));
     cp5.getController("connect").setColorBackground(color(#5c5c5c));
     cp5.getController("serialPortList").setLock(false);
-    cp5.getController("serialPortList").setColorBackground(color(#54f367));
-    cp5.getController("calibrateSensors").setColorBackground(color(#54f367));
+    cp5.getController("serialPortList").setColorBackground(color(#57ebe0));
+    cp5.getController("calibrateSensors").setColorBackground(color(#57ebe0));
     println("Disconnect");
   }
 
@@ -574,7 +596,6 @@ public void SetMaxTemp()
   */
   void draw()
   {
-    background(background_color);
-    myTextlabelB.draw(this);
-    myTextlabelC.draw(this);
+    background(#112233);
+    image(img, 1180-20-(369/3), 20, 369/3, 295/3);
   }
