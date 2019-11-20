@@ -21,6 +21,7 @@ static final int SCREEN_W = 1580;
 static final int SCREEN_H = 800;
 
 
+
 // Window constants
 static final int text_size          = 12;
 static final int background_color   = 0;
