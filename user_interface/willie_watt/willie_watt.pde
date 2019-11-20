@@ -5,7 +5,9 @@ Purpose: Develop a user interface for a steam sterilization system.
 
 @author Jon Ravn, Steven Macías, Sultan Tariq 
 @version 1.0 01/11/2019
+JSON: {"press_sensor_1": 120.00,"temp_sensor_1": 110,"press_sensor_2": 120.00,"temp_sensor_2": 110,"valve_state_1":0,"temp_target":120,"uControllerState": 20}\n
 */
+
 import controlP5.*;
 ControlP5 cp5;
 import processing.serial.*;
@@ -15,8 +17,9 @@ Serial serial_port = null;
 
 //static final String COM_PORT  = "COM4";
 static final int COM_BAUDRATE = 9600;
-static final int SCREEN_W = 1180;
-static final int SCREEN_H = 500;
+static final int SCREEN_W = 1580;
+static final int SCREEN_H = 800;
+
 
 
 // Window constants
@@ -32,11 +35,21 @@ Textlabel myTextlabelB;
 Textlabel myTextlabelC;
 DropdownList d1;
 JSONObject tx_json;
+JSONObject max_temp_json;
+JSONObject startstop_json;
+JSONObject close_all_json;
 Textarea myTextarea;
 Textarea myTextarea2;
 Println console;
 Knob temperatureKnob;
 Knob pressureKnob;
+Knob outTemperatureKnob;
+Knob outPressureKnob;
+//JSONObject changeValveState;
+Toggle startButton;
+Button closeAllValve;
+Button setMaxTemp;
+Boolean closeValve = false;
 
 // serial port buttons
 String serial_list;                // list of serial ports
@@ -46,8 +59,12 @@ int num_serial_ports = 0;          // number of serial ports in the list
 
 // variables for the coordinates
 float press_sensor_1         = 0;
+float press_sensor_2         = 0;
 float temp_sensor_1          = 0;
-int   valve_state_1          =0;
+float temp_sensor_2          = 0;
+int   valve_state_1           =0;
+float temp_target= 0;
+float max_temp;
 JSONArray array_values = new JSONArray();
 int uControllerState = 0;
 
@@ -80,13 +97,18 @@ void serialEvent(Serial serial_port) {
         //array_values = json.getJSONArray("array_values");
         // Get the values of the accelerometer
         press_sensor_1 = json.getFloat("press_sensor_1");
+        press_sensor_2 = json.getFloat("press_sensor_2");
         temp_sensor_1 = json.getFloat("temp_sensor_1");
-        valve_state_1= json.getInt("valve_state_1");
+        temp_sensor_2 = json.getFloat("temp_sensor_2");
+        valve_state_1= json.getInt("temp_target");
+        temp_target=json.getInt("valve_state_1");
         uControllerState = json.getInt("uControllerState");
         myTextarea2.setText(json.toString());
      //update knobs
      temperatureKnob.setValue(temp_sensor_1);
+     outTemperatureKnob.setValue(temp_sensor_2);
      pressureKnob.setValue(press_sensor_1);
+     outPressureKnob.setValue(press_sensor_2);
      
      
      if(valve_state_1==0){
@@ -115,6 +137,19 @@ void serialEvent(Serial serial_port) {
   }
   catch (Exception e) {
     println("Initialization exception" + e);
+  }
+  
+ 
+
+  try {
+    // get message till line break (ASCII > 13)
+    String message =serial_port.readStringUntil(13);
+    // just if there is data
+    if (message != null) {
+      println("message received: "+trim(message));
+    }
+  }
+  catch (Exception e) {
   }
 }
 
@@ -155,7 +190,7 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setHeight(200)
   .setBarHeight(25)
   .setWidth(110);
-  ;
+  
   customize(d1);
 
   // create a toggle and change the default look to a (on/off) switch look
@@ -165,9 +200,26 @@ myTextlabelC.setFont(createFont("Georgia",50));
   .setValue(false)
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
-  .setColorActive(color(#f35454))
-  ;
-println("before:",valve_state_1);  
+  .setColorActive(color(#f35454));
+  
+   startButton = cp5.addToggle("Start")
+  .setPosition(tunning_values_x_pos+120,tunning_values_y_pos-75)
+  .setSize(100,35)
+  .setValue(false)
+  .setMode(ControlP5.SWITCH)
+  .setColorBackground(color(#5c5c5c))
+  .setColorActive(color(#f35454));
+  
+  
+  closeAllValve =cp5.addButton("closeAllValve")
+  .setPosition(tunning_values_x_pos+225,tunning_values_y_pos-75)
+  .setSize(100,35)
+  .setValue(1)
+  .setColorActive(color(#6fe619))
+  .setColorForeground(color(#216329))
+  .setColorBackground(color(#54f367))
+  .setColorLabel(color(#000000));
+
   cp5.addToggle("valve1")
   .setPosition(tunning_values_x_pos+600,tunning_values_y_pos)
   .setSize(50,25)
@@ -175,8 +227,7 @@ println("before:",valve_state_1);
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
   .setColorActive(color(#f35454))
-  .lock()
-  ;
+  .lock();
 
   cp5.addButton("refreshPorts")
   .setPosition(tunning_values_x_pos+150,tunning_values_y_pos)
@@ -185,8 +236,7 @@ println("before:",valve_state_1);
   .setColorActive(color(#6fe619))
   .setColorForeground(color(#216329))
   .setColorBackground(color(#54f367))
-  .setColorLabel(color(#000000))
-  ;
+  .setColorLabel(color(#000000));
 
   cp5.addButton("consoleClearFunc")
   .setPosition(tunning_values_x_pos,tunning_values_y_pos+310)
@@ -195,15 +245,31 @@ println("before:",valve_state_1);
   .setColorActive(color(#6fe619))
   .setColorForeground(color(#216329))
   .setColorBackground(color(#54f367))
+  .setColorLabel(color(#000000));
+  
+  cp5.addSlider("slider")
+  .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+310)
+  .setSize(100,25)
+  .setRange(0,200)
+  .setValue(128);
+     
+  cp5.getController("slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+  
+  setMaxTemp=cp5.addButton("SetMaxTemp")
+  .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+350)
+  .setSize(100,25)
+  .setValue(0)
+  .setColorActive(color(#6fe619))
+  .setColorForeground(color(#216329))
+  .setColorBackground(color(#54f367))
   .setColorLabel(color(#000000))
-  ;
+  .lock();
 
 cp5.addTextlabel("label")
-                    .setText("Logs")
-                    .setPosition(tunning_values_x_pos,tunning_values_y_pos+75)
-                    .setColorValue(0xffffff00)
-                    .setFont(createFont("Georgia",20))
-                    ;
+.setText("Logs")
+.setPosition(tunning_values_x_pos,tunning_values_y_pos+75)
+.setColorValue(0xffffff00)
+.setFont(createFont("Georgia",20));
 
                     
   myTextarea = cp5.addTextarea("txt")
@@ -214,8 +280,8 @@ cp5.addTextlabel("label")
                   .setColor(color(#54f367))
                   .setColorBackground(color(#383a39))
                   .setColorForeground(color(#216329));
-  ;
-  console = cp5.addConsole(myTextarea);//
+                  
+ console = cp5.addConsole(myTextarea);
 
 myTextlabelB = new Textlabel(cp5,"Input",tunning_values_x_pos+700,tunning_values_y_pos+75,400,200);
 myTextlabelB.setColorValue(0xffffff00);
@@ -265,12 +331,48 @@ myTextlabelB.setFont(createFont("Georgia",20));
                .setDragDirection(Knob.HORIZONTAL)
                .lock()
                ;
+               
+               
+                outTemperatureKnob = cp5.addKnob("Out Temperature")
+               .setFont(createFont("times", 10))
+               .setRange(0,200)
+               .setValue(temp_sensor_2)
+               .setPosition(tunning_values_x_pos+400,tunning_values_y_pos+250)
+               .setRadius(50)
+               .setNumberOfTickMarks(10)
+               .setTickMarkLength(4)
+               .snapToTickMarks(false)
+               .setColorForeground(color(#54f367))
+               .setColorBackground(color(#000066))
+               .setColorActive(color(255,255,0))
+               .setDragDirection(Knob.VERTICAL)
+               .setResolution(0.01)
+               .lock()
+               .setMin(0)
+               .setMax(200)
+               ;
+               
+                outPressureKnob = cp5.addKnob("Out Pressure")
+               .setRange(0,20)
+               .setValue(press_sensor_2)
+               .setPosition(tunning_values_x_pos+590,tunning_values_y_pos+250)
+               .setRadius(50)
+               .setNumberOfTickMarks(10)
+               .setTickMarkLength(4)
+               .snapToTickMarks(false)
+               .setColorForeground(color(#54f367))
+               .setColorBackground(color(#216329))
+               .setColorActive(color(255,255,0))
+               .setDragDirection(Knob.HORIZONTAL)
+               .lock()
+               ;
 }
 
 public void transmitValues(int theValue) {
   println("Transmit values: "+theValue);
   if(serial_port != null)
   {
+    
     // Why is this so slow? 2.5 seconds.
     serial_port.write(tx_json.toString().replace("\n", "").replace("\r", ""));
     serial_port.write('\n');
@@ -281,12 +383,70 @@ public void transmitValues(int theValue) {
   }
 }
 
+public void transmitAllJSON() {
+ 
+  JSONObject _json = new JSONObject();
+ 
+  if(serial_port != null)
+  {
+    _json.setFloat("start_stop",startButton.getValue());
+    if(startButton.getValue() == 1)
+{
+     _json.setFloat("max temp", max_temp);
+     _json.setFloat("close all valve",0);
+     if (closeValve)
+     {
+     _json.setFloat("close all valve",1);
+     }
+}
+  
+    // Why is this so slow? 2.5 seconds.
+    serial_port.write(_json.toString().replace("\n", "").replace("\r", ""));
+    serial_port.write('\n');
+
+    delay(100);
+  }
+}
+
   public void refreshPorts(int theValue) {
     println("Refresh ports: "+theValue);
     customize(d1);
   }
 
 
+public void SetMaxTemp()
+{ 
+ transmitAllJSON();
+}
+
+  public void Start()
+  {
+  transmitAllJSON();
+  
+  if(startButton.getValue() == 0)
+  {
+    cp5.getController("SetMaxTemp").lock();
+    cp5.getController("closeAllValve").lock();
+    cp5.getController("Start").setColorActive(color(#f35454));
+    cp5.getController("Start").setColorBackground(color(#5c5c5c));
+  }
+  else
+  {
+    cp5.getController("SetMaxTemp").unlock();
+    cp5.getController("closeAllValve").unlock();
+    cp5.getController("Start").setColorActive(color(#54f367));
+    cp5.getController("Start").setColorBackground(color(#5c5c5c));
+  }
+  }
+  
+  public void closeAllValve()
+  {
+  closeValve = true;
+  transmitAllJSON();
+  closeValve = false;
+  
+  }
+  
   public void consoleClearFunc()
   {
     try{
@@ -297,6 +457,11 @@ public void transmitValues(int theValue) {
         }
     
   }
+  
+  void slider(float value) {
+  max_temp = value;
+  
+}
 
   void connect(boolean theFlag) {
     boolean port_error = false;
@@ -315,11 +480,13 @@ public void transmitValues(int theValue) {
         if(port_error == false)
         {
           lockButtons();
+          
         }else
         {
           unlockButtons();
           //put the switch in off position
           cp5.getController("connect").setValue(0);
+          
         }
 
       }
