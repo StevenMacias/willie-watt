@@ -24,15 +24,15 @@ def test_serial():
         for x in range(255):
             current_temp = (temp_max_val/255.00)*x
             current_press = (pressure_max_val/255.00)*x
-            ser.write('{"press_sensor_1":'+str(current_press)+', "temp_sensor_1":'+str(current_temp)+', "valve_state_1":0, "uControllerState":0}\n') #write the first command
-            print('{"press_sensor_1":'+str(current_press)+', "temp_sensor_1":'+str(current_temp)+', "valve_state_1":0, "uControllerState":0}\n')
+            ser.write('{"press_sensor_1":'+str(current_press)+', "temp_sensor_1":'+str(current_temp)+', "press_sensor_2":'+str(current_press)+', "temp_sensor_2":'+str(current_temp)+', "temp_target":70, "valve_state_1":0, "uControllerState":0}\n')
+            print('{"press_sensor_1":'+str(current_press)+', "temp_sensor_1":'+str(current_temp)+', "press_sensor_2":'+str(current_press)+', "temp_sensor_2":'+str(current_temp)+', "temp_target":70, "valve_state_1":0, "uControllerState":0}\n')
             ser.flush()
             time.sleep(0.01)
         for x in range(255):
             current_temp = temp_max_val-((temp_max_val/255.00)*x)
             current_press = pressure_max_val-((pressure_max_val/255.00)*x)
-            ser.write('{"press_sensor_1":'+str(current_press)+', "temp_sensor_1":'+str(current_temp)+', "valve_state_1":0, "uControllerState":0}\n') #write the first command
-            print('{"press_sensor_1":'+str(current_press)+', "temp_sensor_1":'+str(current_temp)+', "valve_state_1":0, "uControllerState":0}\n')
+            ser.write('{"press_sensor_1":'+str(current_press)+', "temp_sensor_1":'+str(current_temp)+', "press_sensor_2":'+str(current_press)+', "temp_sensor_2":'+str(current_temp)+', "temp_target":70, "valve_state_1":0, "uControllerState":0}\n')
+            print('{"press_sensor_1":'+str(current_press)+', "temp_sensor_1":'+str(current_temp)+', "press_sensor_2":'+str(current_press)+', "temp_sensor_2":'+str(current_temp)+', "temp_target":70, "valve_state_1":0, "uControllerState":0}\n')
             ser.flush()
             time.sleep(0.01)
 
