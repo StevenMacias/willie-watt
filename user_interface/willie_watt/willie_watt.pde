@@ -17,14 +17,16 @@ Serial serial_port = null;
 
 //static final String COM_PORT  = "COM4";
 static final int COM_BAUDRATE = 9600;
-static final int SCREEN_W = 1580;
-static final int SCREEN_H = 800;
+static final int SCREEN_W = 1180;
+static final int SCREEN_H = 500;
+static final int DIAG_X = 750;
+static final int DIAG_Y = 10;
 
 
 
 // Window constants
 static final int text_size          = 12;
-PImage img;
+PImage img, diagram;
 
 static final int tunning_values_x_pos    = 60;
 static final int tunning_values_y_pos    = 90;
@@ -66,7 +68,8 @@ float max_temp;
 JSONArray array_values = new JSONArray();
 int uControllerState = 0;
 
-
+// Control variables
+boolean heater, water_pump, valve_0 = false;
 
 void PRINT(String s)
 {
@@ -101,12 +104,15 @@ void serialEvent(Serial serial_port) {
         valve_state_1= json.getInt("temp_target");
         temp_target=json.getInt("valve_state_1");
         uControllerState = json.getInt("uControllerState");
+        heater = json.getBoolean("heater");
+        water_pump = json.getBoolean("water_pump");
+        valve_0 = json.getBoolean("valve_0");
         myTextarea2.setText(json.toString());
-     //update knobs
-     temperatureKnob.setValue(temp_sensor_1);
-     outTemperatureKnob.setValue(temp_sensor_2);
-     pressureKnob.setValue(press_sensor_1);
-     outPressureKnob.setValue(press_sensor_2);
+       //update knobs
+       temperatureKnob.setValue(temp_sensor_1);
+       outTemperatureKnob.setValue(temp_sensor_2);
+       pressureKnob.setValue(press_sensor_1);
+       outPressureKnob.setValue(press_sensor_2);
 
 
      /*if(valve_state_1==0){
@@ -273,13 +279,13 @@ cp5.addTextlabel("label")
 .setText("Logs")
 .setPosition(tunning_values_x_pos,tunning_values_y_pos+75)
 .setColorValue(#FFFFFF)
-.setFont(createFont("Georgia",14));
+.setFont(createFont("Helvetica",14));
 
 
   myTextarea = cp5.addTextarea("txt")
                   .setPosition(tunning_values_x_pos,tunning_values_y_pos+100)
-                  .setSize(380, 200)
-                  .setFont(createFont("arial", 10))
+                  .setSize(180, 200)
+                  .setFont(createFont("Helvetica", 8))
                   .setLineHeight(14)
                   .setColor(color(#57ebe0))
                   .setColorBackground(color(#383a39))
@@ -289,12 +295,12 @@ cp5.addTextlabel("label")
 
 myTextlabelB = new Textlabel(cp5,"Input",tunning_values_x_pos+700,tunning_values_y_pos+75,400,200);
 myTextlabelB.setColorValue(#FFFFFF);
-myTextlabelB.setFont(createFont("Georgia",14));
+myTextlabelB.setFont(createFont("Helvetica",14));
 
   myTextarea2 = cp5.addTextarea("rx_json_textarea")
-                  .setPosition(tunning_values_x_pos+700,tunning_values_y_pos+100)
-                  .setSize(380, 200)
-                  .setFont(createFont("arial", 10))
+                  .setPosition(tunning_values_x_pos+190,tunning_values_y_pos+100)
+                  .setSize(180, 200)
+                  .setFont(createFont("Helvetica", 8))
                   .setLineHeight(14)
                   .setColor(color(#54f3d3))
                   .setColorBackground(color(#383a39))
@@ -303,7 +309,7 @@ myTextlabelB.setFont(createFont("Georgia",14));
 
 
                 temperatureKnob = cp5.addKnob("Temperature")
-               .setFont(createFont("times", 10))
+               .setFont(createFont("Helvetica", 8))
                .setRange(0,200)
                .setValue(temp_sensor_1)
                .setPosition(tunning_values_x_pos+410,tunning_values_y_pos+100)
@@ -321,7 +327,8 @@ myTextlabelB.setFont(createFont("Georgia",14));
                .setMax(200)
                ;
 
-                 pressureKnob = cp5.addKnob("Pressure")
+                pressureKnob = cp5.addKnob("Pressure")
+               .setFont(createFont("Helvetica", 8))
                .setRange(0,20)
                .setValue(press_sensor_1)
                .setPosition(tunning_values_x_pos+570,tunning_values_y_pos+100)
@@ -338,7 +345,7 @@ myTextlabelB.setFont(createFont("Georgia",14));
 
 
                 outTemperatureKnob = cp5.addKnob("Out Temperature")
-               .setFont(createFont("times", 10))
+               .setFont(createFont("Helvetica", 8))
                .setRange(0,200)
                .setValue(temp_sensor_2)
                .setPosition(tunning_values_x_pos+410,tunning_values_y_pos+250)
@@ -357,6 +364,7 @@ myTextlabelB.setFont(createFont("Georgia",14));
                ;
 
                 outPressureKnob = cp5.addKnob("Out Pressure")
+                .setFont(createFont("Helvetica", 8))
                .setRange(0,20)
                .setValue(press_sensor_2)
                .setPosition(tunning_values_x_pos+570,tunning_values_y_pos+250)
@@ -372,6 +380,9 @@ myTextlabelB.setFont(createFont("Georgia",14));
                ;
    myTextlabelB.draw(this);
    img = loadImage("img/logo-inv.png");
+   diagram = loadImage("img/diagram.png");
+   diagram.resize(0, 550);
+
 
 }
 
@@ -470,7 +481,7 @@ public void SetMaxTemp()
     if(clicked==0 && serial_port == null)
     {
     try{
-          serial_port = new Serial(this, "/dev/pts/3", COM_BAUDRATE);
+          serial_port = new Serial(this, "/dev/pts/4", COM_BAUDRATE);
           serial_port.clear();
           serial_port.bufferUntil('\n');
         }
@@ -577,6 +588,26 @@ public void SetMaxTemp()
     }
   }
 
+  void diagramControl()
+  {
+    noFill();
+    strokeWeight(2);
+
+    // Water pump
+    if(water_pump){stroke(#03f5e3);}else{stroke(#6d6b6b);}
+    rect(DIAG_X+25, DIAG_Y+65, 40, 40, 4);
+
+    // Input valve
+    if(valve_0){stroke(#03f5e3);}else{stroke(#6d6b6b);}
+    rect(DIAG_X+110, DIAG_Y+115, 30, 30, 4);
+
+    // Heaters
+    if(heater){stroke(#f30404);}else{stroke(#6d6b6b);}
+    rect(DIAG_X+75, DIAG_Y+200, 20, 100, 4);
+    rect(DIAG_X+165, DIAG_Y+200, 20, 100, 4);
+
+  }
+
   void customize(DropdownList ddl) {
     // a convenience function to customize a DropdownList
     ddl.clear();
@@ -598,4 +629,6 @@ public void SetMaxTemp()
   {
     background(#112233);
     image(img, 1180-20-(369/3), 20, 369/3, 295/3);
+    image(diagram, DIAG_X, DIAG_Y);
+    diagramControl();
   }
