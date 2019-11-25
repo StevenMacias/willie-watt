@@ -1,48 +1,56 @@
 #include <ArduinoJson.h>
 
-int led = 9;           // The PWM pin the LED is attached to
-int brightness = 0;    // How bright the LED is
+//int led = 9;           // The PWM pin the LED is attached to
+//int brightness = 0;    // How bright the LED is
 
-const size_t capacity_in = JSON_OBJECT_SIZE(2) + 30;      // The size of the incomming json (Calculated from this assistant: https://arduinojson.org/v6/assistant/)
+const size_t capacity_in = JSON_OBJECT_SIZE(1) + 10;;      // The size of the incomming json (Calculated from this assistant: https://arduinojson.org/v6/assistant/)
 const size_t capacity_out = JSON_OBJECT_SIZE(7) + 120;    // The size of the outgoing json (Calculated from this assistant: https://arduinojson.org/v6/assistant/)
 
 // set pin numbers:
 
-const int in = A0;     // Used to bias the diode  anode
-const int t0 = 20.3;
-const float vf0 = 573.44;
+//const int in = A0;     // Used to bias the diode  anode
+//const int t0 = 20.3;
+//const float vf0 = 573.44;
 
 // variables will change:
 int i;
-float dtemp, dtemp_avg, t, b;
+//float dtemp, dtemp_avg, t, b;
 float max_temp = 30;      // Default safe value for temperature
 String input;             // Input json string 
-
+bool start = false;       // Start/stop value from the input json string
+int step = 0;             // Step counter
 
 void setup() {
   Serial.begin(9600);
-  pinMode(in, INPUT_PULLUP);   // Set the pin IN with npull up to bias the diode
-  pinMode(led, OUTPUT);
+//  pinMode(in, INPUT_PULLUP);   // Set the pin IN with npull up to bias the diode
+//  pinMode(led, OUTPUT);
 
 }
 
 
 // When the temperature reaches the max temperature, do something (right now: light up diode):
-void openValveFunc()
+void openValve()
 {
-  if (t > max_temp) {
-    
-    analogWrite(led, 255);
 
-    }else
-    {
-    analogWrite(led, 0);
-    }
+  //TODO: Implement openValve. It should probably take a parameter regarding to which valve it should open
+
+}
+
+void closeValve()
+{
+
+  //TODO: Implement closeValve. It should probably take a parameter regarding to which valve it should close
+
+}
+
+void pointValve()
+{
+  //TODO: Implement pointValve. It should probably take a parameter regarding to which way it should point
 }
 
 // Calculating the temperature t:
 void findTemperature()
-{
+{/*
     dtemp_avg = 0;
     for (i = 0; i < 1024; i++) {
       float vf = analogRead(A0) * (4976.30 / 1023.000);
@@ -50,31 +58,78 @@ void findTemperature()
       dtemp_avg = dtemp_avg + dtemp;
     }
     t = t0 - dtemp_avg / 1024;  
+
+    TODO: Implement findTemperature. It I see no problem in this function to get and set both temperature values.
+    
+*/}
+
+void findPressure()
+{
+  // TODO: Implement findPressure. It I see no problem in this function to get and set both pressure values.
 }
 
 void loop() {
-  
+  // Find temperatures and pressure values and then send them to the UI:
   findTemperature();
+  findPressure();
   
   if(Serial.available()){
     DynamicJsonDocument doc_in(capacity_in);    // Create a Json Document for the incomming json-string 
     input = Serial.readStringUntil('\n');       // Read the incomming json-string
     deserializeJson(doc_in, input);             // Deserialize the json-string
 
-    max_temp = doc_in["max_temp"]; // 30        // Set the max temperature value from the json-string
+    start = doc_in["start"];                    // Set the start value from the json-string
     }
 
-    DynamicJsonDocument doc_out(capacity_out);  // Create a new Json Document for the outgoing json-string
-    doc_out["press_sensor_1"] = 120;            // Set all the values (some are hardcoded for the time being – should of course be changed in the future):
-    doc_out["temp_sensor_1"] = t;
-    doc_out["press_sensor_2"] = 120;
-    doc_out["temp_sensor_2"] = t;
-    doc_out["valve_state_1"] = 0;
-    doc_out["temp_target"] = max_temp;
-    doc_out["uControllerState"] = 20;           // What is this value exactly??
+  DynamicJsonDocument doc_out(capacity_out);  // Create a new Json Document for the outgoing json-string
+  doc_out["press_sensor_1"] = 120;            // Set all the values (some are hardcoded for the time being – should of course be changed in the future):
+  doc_out["temp_sensor_1"] = 30;
+  doc_out["press_sensor_2"] = 120;
+  doc_out["temp_sensor_2"] = 30;
+  doc_out["valve_state_1"] = 0;
+  doc_out["temp_target"] = max_temp;
+  doc_out["uControllerState"] = 20;           // What is this value exactly??
   
-    serializeJson(doc_out, Serial);             // Serialize the Json Document and send the json-string:
-    Serial.print("\n");
+  serializeJson(doc_out, Serial);             // Serialize the Json Document and send the json-string:
+  Serial.print("\n");
 
-    openValveFunc();
+
+// Start or continue the sterilization process if the UI sets start == true
+  if(start == true && step == 0){
+    closeValve();
+    closeValve();                            // Close all valves
+    closeValve();
+    closeValve();  
+    if(start == false){                      // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+    }
+    else {
+      step = 1;
+    }
+  }
+  else if (start == true && step == 1){
+    openValve();                              // Open input valve (3.1)
+    pointValve();                             // Point 2.1 to the waterpump
+    // Check if the main champer is filled?
+    closeValve;                               // Close input valve (3.1)
+    if(start == false){                       // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;
+    }
+    else {
+      step = 2;    
+    }
+  }
+  else if(start == true && step == 2){
+
+
+    if(start == false){                     // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;
+    }
+    else {
+      step = 3;    
+    }
+  }
+
 }
