@@ -5,8 +5,7 @@ Purpose: Develop a user interface for a steam sterilization system.
 
 @author Jon Ravn, Steven Macías, Sultan Tariq
 @version 1.0 01/11/2019
-JSON: {"press_sensor_1": 120.00,"temp_sensor_1": 110,"press_sensor_2": 120.00,"temp_sensor_2": 110,"valve_state_1":0,"temp_target":120,"uControllerState": 20}\n
-*/
+{"press_sensor_1": 19,"temp_sensor_1": 190,"press_sensor_2": 12.00,"temp_sensor_2": 110,"valve_state_1":0,"temp_target":120,"heater": "true","water_pump": "true","valve_0": "true","valve_1": "true","valve_2": "false","uControllerState": 20}\n*/
 
 import controlP5.*;
 ControlP5 cp5;
@@ -71,7 +70,7 @@ JSONArray array_values = new JSONArray();
 int uControllerState = 0;
 
 // Control variables
-boolean heater, water_pump, valve_0 = false;
+boolean heater, water_pump, valve_0,valve_1,valve_2 = false;
 
 void PRINT(String s)
 {
@@ -109,6 +108,8 @@ void serialEvent(Serial serial_port) {
         heater = json.getBoolean("heater");
         water_pump = json.getBoolean("water_pump");
         valve_0 = json.getBoolean("valve_0");
+        valve_1 = json.getBoolean("valve_1");
+        valve_2 = json.getBoolean("valve_2");
         myTextarea2.setText(json.toString());
        //update knobs
        //temperatureKnob.setValue(temp_sensor_1);
@@ -212,7 +213,7 @@ void setup() {
   .setColorBackground(color(#5c5c5c))
   .setColorActive(color(#ba2929));
 
-
+/*
   closeAllValve =cp5.addButton("closeAllValve")
   .setPosition(tunning_values_x_pos+190,tunning_values_y_pos-65)
   .setSize(110,25)
@@ -288,6 +289,7 @@ cp5.addTextlabel("label")
                   .setColorForeground(color(#0670ff));
 
  console = cp5.addConsole(myTextarea);
+
 
 myTextlabelB = new Textlabel(cp5,"Input",tunning_values_x_pos+700,tunning_values_y_pos+75,400,200);
 myTextlabelB.setColorValue(#FFFFFF);
@@ -376,7 +378,7 @@ myTextlabelB.setFont(createFont("Helvetica",14));
     m3.setTicMarkColor(color(0, 0, 0));
     m3.setDisplayDigitalMeterValue(true);
     
-     m4 = new Meter(this, tunning_values_x_pos+590,tunning_values_y_pos+210);
+    m4 = new Meter(this, tunning_values_x_pos+590,tunning_values_y_pos+210);
     m4.setMeterWidth(int(180));
     m4.setScaleLabels(scaleLabelsH);
   // Adjust font color of meter value  
@@ -404,6 +406,7 @@ myTextlabelB.setFont(createFont("Helvetica",14));
    img = loadImage("img/logo-inv.png");
    diagram = loadImage("img/diagram.png");
    diagram.resize(0, 550);
+   
    
    //dropdownlist should be intialiazed at last
     d1 = cp5.addDropdownList("serialPortList")
@@ -451,7 +454,7 @@ public void transmitAllJSON() {
   if(serial_port != null)
   {
     _json.setFloat("start_stop",startButton.getValue());
-    //if(startButton.getValue() == 1)
+    /*if(startButton.getValue() == 1)
 {
      _json.setFloat("max_temp", max_temp);
      _json.setInt("close_all_valves",0);
@@ -459,7 +462,7 @@ public void transmitAllJSON() {
      {
      _json.setInt("close_all_valves",1);
      }
-}
+}*/
 
     // Why is this so slow? 2.5 seconds.
     serial_port.write(_json.toString().replace("\n", "").replace("\r", ""));
@@ -648,6 +651,15 @@ public void SetMaxTemp()
     if(heater){stroke(#f30404);}else{stroke(#6d6b6b);}
     rect(DIAG_X+75, DIAG_Y+200, 20, 100, 4);
     rect(DIAG_X+165, DIAG_Y+200, 20, 100, 4);
+    
+    
+    // 3.2
+    if(valve_1){stroke(#03f5e3);}else{stroke(#6d6b6b);}
+    rect(DIAG_X+115, DIAG_Y+375, 37, 40, 4);
+    
+    // 3.3
+    if(valve_2){stroke(#03f5e3);}else{stroke(#6d6b6b);}
+    rect(DIAG_X+250, DIAG_Y+375, 37, 40, 4);
 
   }
 
@@ -669,7 +681,7 @@ public void SetMaxTemp()
      //start
     rect(50, 20, 170, 120);
      //box around Setting values
-    rect(240, 20, 130, 120);
+    //rect(240, 20, 130, 120);
    
    //box around  guages
   rect(465, 185, 370, 230);   
@@ -678,7 +690,7 @@ public void SetMaxTemp()
     rect(50, 180, 390, 250);
     
    //Outputs
-   rect(465, 20, 370, 140);   
+   //rect(465, 20, 370, 140);   
   }
   
   void texts()
@@ -687,7 +699,7 @@ public void SetMaxTemp()
      //box around connect
     fill(#ffffff);
     text("Start", tunning_values_x_pos, tunning_values_y_pos-75);  
-    text("Inputs",tunning_values_x_pos+190, tunning_values_y_pos-75);
+    //text("Inputs",tunning_values_x_pos+190, tunning_values_y_pos-75);
     text("Guages",tunning_values_x_pos+425, tunning_values_y_pos+90);
  
 
@@ -697,7 +709,7 @@ public void SetMaxTemp()
   
  void showMeters()
  {
-     m1.updateMeter(int(temp_sensor_1));
+    m1.updateMeter(int(temp_sensor_1));
     m2.updateMeter(int(press_sensor_1));
     m3.updateMeter(int(temp_sensor_2));
     m4.updateMeter(int(press_sensor_2));
