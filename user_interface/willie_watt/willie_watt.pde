@@ -451,13 +451,13 @@ public void transmitAllJSON() {
   if(serial_port != null)
   {
     _json.setFloat("start_stop",startButton.getValue());
-    if(startButton.getValue() == 1)
+    //if(startButton.getValue() == 1)
 {
-     _json.setFloat("max temp", max_temp);
-     _json.setFloat("close all valve",0);
+     _json.setFloat("max_temp", max_temp);
+     _json.setInt("close_all_valves",0);
      if (closeValve)
      {
-     _json.setFloat("close all valve",1);
+     _json.setInt("close_all_valves",1);
      }
 }
 
@@ -724,3 +724,4 @@ public void SetMaxTemp()
   }
    
    
+  
