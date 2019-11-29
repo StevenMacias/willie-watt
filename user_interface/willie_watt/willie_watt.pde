@@ -5,7 +5,7 @@ Purpose: Develop a user interface for a steam sterilization system.
 
 @author Jon Ravn, Steven Macías, Sultan Tariq
 @version 1.0 01/11/2019
-{"press_sensor_1": 19,"temp_sensor_1": 190,"press_sensor_2": 12.00,"temp_sensor_2": 110,"valve_state_1":0,"temp_target":120,"heater": "true","water_pump": "true","valve_0": "true","valve_1": "true","valve_2": "false","uControllerState": 20}\n*/
+*/
 
 import controlP5.*;
 ControlP5 cp5;
@@ -339,7 +339,7 @@ myTextlabelB.setFont(createFont("Helvetica",14));
 
   // Adjust font color of meter value  
     m2.setTitleFontSize(20);
-    m2.setTitle("In Pressure (C)");
+    m2.setTitle("In Pressure (Bar)");
     m2.setScaleFontSize(12);
     m2.setScaleFontName("Times New Roman bold");
     m2.setScaleFontColor(color(200, 30, 70));
@@ -378,13 +378,13 @@ myTextlabelB.setFont(createFont("Helvetica",14));
     m3.setTicMarkColor(color(0, 0, 0));
     m3.setDisplayDigitalMeterValue(true);
     
-    m4 = new Meter(this, tunning_values_x_pos+590,tunning_values_y_pos+210);
+     m4 = new Meter(this, tunning_values_x_pos+590,tunning_values_y_pos+210);
     m4.setMeterWidth(int(180));
     m4.setScaleLabels(scaleLabelsH);
   // Adjust font color of meter value  
     m4.setTitleFontSize(20);
     m4.setTitleFontName("Arial bold");
-    m4.setTitle("Out Pressure (C)");
+    m4.setTitle("Out Pressure (Bar)");
     m4.setScaleFontSize(12);
     m4.setScaleFontColor(color(200, 30, 70));
     m4.setArcThickness(5);
@@ -722,7 +722,7 @@ public void SetMaxTemp()
   void draw()
   {
     background(#3d7c91);
-    //image(img, 1180-20-(369/3), 20, 369/3, 295/3);
+    image(img, 1280-20-(369/3), 20, 369/3, 295/3);
     image(diagram, DIAG_X, DIAG_Y);
     diagramControl();
            
