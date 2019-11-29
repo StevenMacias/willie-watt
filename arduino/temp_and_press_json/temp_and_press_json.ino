@@ -19,6 +19,7 @@ float max_temp = 30;      // Default safe value for temperature
 String input;             // Input json string 
 bool start = false;       // Start/stop value from the input json string
 int step = 0;             // Step counter
+float temp;
 
 void setup() {
   Serial.begin(9600);
@@ -68,6 +69,28 @@ void findPressure()
   // TODO: Implement findPressure. It I see no problem in this function to get and set both pressure values.
 }
 
+void turnONHeater()
+{
+  // TODO: Implement turnONHeater.
+}
+
+void turnOFFHeater()
+{
+  // TODO: Implement turnOFFHeater. 
+}
+
+void turnONAir()
+{
+  // TODO: Implement turnONAir.
+}
+
+void turnOFFAir()
+{
+  // TODO: Implement turnOFFAir. 
+}
+
+
+
 void loop() {
   // Find temperatures and pressure values and then send them to the UI:
   findTemperature();
@@ -114,22 +137,74 @@ void loop() {
     closeValve;                               // Close input valve (3.1)
     if(start == false){                       // Check if the program is told to abort the process
       // Do the abort-procedure for this step.
-      step = 0;
+      step = 0;                               // Stop the process
     }
     else {
       step = 2;    
     }
   }
   else if(start == true && step == 2){
-
-
-    if(start == false){                     // Check if the program is told to abort the process
-      // Do the abort-procedure for this step.
-      step = 0;
+    turnONHeater();                           // Turn on heaters (7)
+    if(temp > 99.99){                         // Check if water is boiling (Also use pressure values to check it?)
+      step = 3;
+      turnOFFHeater();                        // Turn off heaters (7)
     }
-    else {
-      step = 3;    
+    if(start == false){                       // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
     }
   }
-
+  else if(start == true && step == 3){
+    openValve();                              // Open output valve (3.2)
+    // wait for flush
+    closeValve();                             // Close output valve (3.2)
+    // wait one minute
+    // if one minute has passed
+    step = 4;
+    if(start == false){                       // Check if the program is told to abort the process
+      openValve();                            // Open output valve (3.2)            
+      openValve();                            // Open input valve (3.1)
+      pointValve();                           // Point 2.1 to the disconnected end
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == true && step == 4){
+    openValve();                              // Open the draining vessel valve (3.3)
+    step = 5;
+    if(start == false){                       // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == true && step == 5){
+    openValve();                              // Open input valve (3.1)
+    openValve();                              // Open output valve (3.2)
+    openValve();                              // Open valve (2.2)
+    pointValve();                             // Point 2.1 to the air compressor
+    step = 6;
+    if(start == false){                       // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == true && step == 6){
+    turnONAir();                              // Turn on air compressor and inject compressed air.
+    // wait for air to drain the tubes
+    turnOFFAir();                             // Turn off air compressor
+    step = 7;
+    if(start == false){                       // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == true && step == 7){
+    closeValve();                              // Close input valve (3.1)
+    closeValve();                              // Close output valve (3.2)
+    closeValve();                              // Close valve (2.2)
+    step = 8;
+    if(start == false){                       // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
 }
