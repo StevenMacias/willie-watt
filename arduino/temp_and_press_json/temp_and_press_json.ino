@@ -6,6 +6,7 @@
 #define MAXCLK  3
 #define MAXCS1  4
 #define MAXCS2  5
+#define AIR_COMPRESSOR  6
 #define WATER_PUMP  8
 #define HEATER      9
 #define VALVE_0     10      // The input valve (3.1)
@@ -30,6 +31,7 @@ int start = 0;              // Start/stop value from the input json string
 int step = 0;               // Step counter
 float temp1;                // The first temperature value
 float temp2;                // The secound temperature value
+boolean aircomp = false;    // on-off value for the air compressor
 boolean heater = false;     // On-off value for the heaters
 boolean water_pump = false; // On-off value for the water pump
 boolean valve_0 = false;    // On-off value for valve 0
@@ -198,7 +200,7 @@ void sterilizationProcess()
     openValve(VALVE_2);                       // Open the draining vessel valve (3.3)
     openValve(VALVE_3);                       // Open the end valve (2.2)
     openValve(VALVE_0);                       // Open the input valve (3.1)
-    openValve(VALVE_1)                        // Open the input valve (3.2)
+    openValve(VALVE_1);                        // Open the input valve (3.2)
     pointValve();                             // Point 2.1 to the air compressor
     turnONAir();                              // Turn on air compressor and inject compressed air.
     // wait for air to drain the tubes
@@ -216,10 +218,11 @@ void sterilizationProcess()
     closeValve(VALVE_3);                      // Close the end valve (2.2)
     step = 0;
     start = 0;
+  }
 }
 
 
-void openValve(valve)
+void openValve(int valve)
 {
   digitalWrite(valve, HIGH);
   if(valve == VALVE_0){
@@ -232,11 +235,11 @@ void openValve(valve)
     valve_2 = true;
   }
   else if(valve == VALVE_3){
-    valve_3 = true
+    valve_3 = true;
   }
 }
 
-void closeValve(valve)
+void closeValve(int valve)
 {
   digitalWrite(valve, LOW);
   if(valve == VALVE_0){
@@ -285,12 +288,14 @@ void turnOFFHeater()
 
 void turnONAir()
 {
-  // TODO: Implement turnONAir.
+  digitalWrite(AIR_COMPRESSOR, HIGH);
+  aircomp = true;
 }
 
 void turnOFFAir()
 {
-  // TODO: Implement turnOFFAir. 
+  digitalWrite(AIR_COMPRESSOR, LOW);
+  aircomp = false;
 }
 
 
