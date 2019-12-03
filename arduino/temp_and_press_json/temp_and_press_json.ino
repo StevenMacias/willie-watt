@@ -96,19 +96,7 @@ void sterilizationProcess()
     openValve(VALVE_1);                       // Open output valve (3.2)
     // wait for flush
     closeValve(VALVE_1);                      // Close output valve (3.2)
-    // wait one minute
-    /*for (int i=0; i<120; i++) {             // What do you think about this solution in order to wait 1 minute? It will stop the program for 0.5 second, and then monitor temp and pressure, and then stop for 0.5 second again, and repeating the process for 1 minute.
-      findTemperature();
-      findPressure();
-      if(Serial.available()){
-      recieveJSON();
-      }  
-      sendJSON();
-      if(start == 0){
-        break;
-      }
-      delay(500);
-   }*/
+    wait(60);                                 // Wait one minute
     // when one minute has passed
     step = 4;
     if(start == 0){                           // Check if the program is told to abort the process
@@ -334,6 +322,22 @@ void sendJSON(){
   
   serializeJson(doc_out, Serial);               // Serialize the Json Document and send the json-string:
   Serial.print("\n");
+}
+
+void wait(int j){
+  j = j*2;
+  for (int i=0; i<j; i++) {             // What do you think about this solution in order to wait? It will stop the program for 0.5 second using delay, and then monitor temp and pressure, and then stop for 0.5 second again, and repeating the process for j seconds.
+  findTemperature();
+  findPressure();
+  if(Serial.available()){
+  recieveJSON();
+  }  
+  sendJSON();
+  if(start == 0){
+    break;
+  }
+  delay(500);
+ }
 }
 
 
