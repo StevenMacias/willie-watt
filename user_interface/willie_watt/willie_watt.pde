@@ -1,17 +1,17 @@
-/**
+   /**
 Willie Watt User Interface
 willie_watt.pde
 Purpose: Develop a user interface for a steam sterilization system.
 
 @author Jon Ravn, Steven Macías, Sultan Tariq
 @version 1.0 01/11/2019
-JSON: {"press_sensor_1": 120.00,"temp_sensor_1": 110,"press_sensor_2": 120.00,"temp_sensor_2": 110,"valve_state_1":0,"temp_target":120,"uControllerState": 20}\n
 */
 
 import controlP5.*;
 ControlP5 cp5;
 import processing.serial.*;
 Serial serial_port = null;
+import meter.*;
 
 // Configuration constants
 
@@ -19,7 +19,7 @@ Serial serial_port = null;
 static final int COM_BAUDRATE = 9600;
 static final int SCREEN_W = 1180;
 static final int SCREEN_H = 500;
-static final int DIAG_X = 750;
+static final int DIAG_X = 825;
 static final int DIAG_Y = 10;
 
 
@@ -50,6 +50,7 @@ Toggle startButton;
 Button closeAllValve;
 Button setMaxTemp;
 Boolean closeValve = false;
+Meter m1,m2,m3,m4;
 
 // serial port buttons
 String serial_list;                // list of serial ports
@@ -69,7 +70,7 @@ JSONArray array_values = new JSONArray();
 int uControllerState = 0;
 
 // Control variables
-boolean heater, water_pump, valve_0 = false;
+boolean heater, water_pump, valve_0,valve_1,valve_2 = false;
 
 void PRINT(String s)
 {
@@ -107,12 +108,14 @@ void serialEvent(Serial serial_port) {
         heater = json.getBoolean("heater");
         water_pump = json.getBoolean("water_pump");
         valve_0 = json.getBoolean("valve_0");
+        valve_1 = json.getBoolean("valve_1");
+        valve_2 = json.getBoolean("valve_2");
         myTextarea2.setText(json.toString());
        //update knobs
-       temperatureKnob.setValue(temp_sensor_1);
-       outTemperatureKnob.setValue(temp_sensor_2);
-       pressureKnob.setValue(press_sensor_1);
-       outPressureKnob.setValue(press_sensor_2);
+       //temperatureKnob.setValue(temp_sensor_1);
+       //outTemperatureKnob.setValue(temp_sensor_2);
+       //pressureKnob.setValue(press_sensor_1);
+       //outPressureKnob.setValue(press_sensor_2);
 
 
      /*if(valve_state_1==0){
@@ -165,7 +168,7 @@ Function that initializes the user interface
 void setup() {
   // create window
   frameRate(20);
-  size(1180, 500);
+  size(1300, 500);
   smooth(4);
   tx_json = new JSONObject();
 
@@ -175,52 +178,69 @@ void setup() {
   cp5 = new ControlP5(this);
 
 
+  //Group g1= cp5.addGroup("a").setPosition(100,100).setWidth(180);
+  //Group g2= cp5.addGroup("b").setPosition(200,200).setWidth(180);
+  
   // create a DropdownList,
-  d1 = cp5.addDropdownList("serialPortList")
-  .setPosition(tunning_values_x_pos, tunning_values_y_pos)
-  .setOpen(false)
-  .setBackgroundColor(color(#0670FF))
-  .setColorActive(color(#0670FF))
-  .setColorBackground(color(#57ebe0))
-  .setColorCaptionLabel(color(#0670FF))
-  .setColorForeground(color(#0670FF))
-  .setColorLabel(color(#000000))
-  .setColorValue(color(#0670FF))
-  .setColorValueLabel(color(#000000))
-  .setItemHeight(25)
-  .setHeight(200)
-  .setBarHeight(25)
-  .setWidth(110);
 
-  customize(d1);
+  
+  cp5.addButton("refreshPorts")
+  .setPosition(tunning_values_x_pos, tunning_values_y_pos-28)
+  .setSize(155,25)
+  .setValue(0)
+  .setColorActive(color(#6fe619))
+  .setColorForeground(color(#0670FF))
+  .setColorBackground(color(#3990b3))
+  .setColorLabel(color(#000000))
+  ;
+  
+
 
   // create a toggle and change the default look to a (on/off) switch look
   cp5.addToggle("connect")
-  .setPosition(tunning_values_x_pos,tunning_values_y_pos-75)
-  .setSize(100,35)
+  .setPosition(tunning_values_x_pos,tunning_values_y_pos+10)
+  .setSize(75,25)
   .setValue(false)
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
-  .setColorActive(color(#3e44ec));
+  .setColorActive(color(#ba2929));
 
    startButton = cp5.addToggle("Start")
-  .setPosition(tunning_values_x_pos+120,tunning_values_y_pos-75)
-  .setSize(100,35)
+  .setPosition(tunning_values_x_pos+80,tunning_values_y_pos+10)
+  .setSize(75,25)
   .setValue(false)
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
-  .setColorActive(color(#3e44ec));
+  .setColorActive(color(#ba2929));
 
-
+/*
   closeAllValve =cp5.addButton("closeAllValve")
-  .setPosition(tunning_values_x_pos+225,tunning_values_y_pos-75)
-  .setSize(100,35)
+  .setPosition(tunning_values_x_pos+190,tunning_values_y_pos-65)
+  .setSize(110,25)
   .setValue(1)
-  .setColorActive(color(#6fe619))
+  .setColorActive(color(#1986e6))
   .setColorForeground(color(#0670FF))
-  .setColorBackground(color(#57ebe0))
+  .setColorBackground(color(#3990b3))
   .setColorLabel(color(#000000));
 
+  cp5.addSlider("slider")
+  .setPosition(tunning_values_x_pos+190,tunning_values_y_pos-20)
+  .setSize(110,25)
+  .setRange(0,200)
+  .setValue(128)
+  .setColorBackground(color(#3990b3));
+
+  cp5.getController("slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+
+  setMaxTemp=cp5.addButton("SetMaxTemp")
+  .setPosition(tunning_values_x_pos+190,tunning_values_y_pos+20)
+  .setSize(110,25)
+  .setValue(0)
+  .setColorActive(color(#6fe619))
+  .setColorForeground(color(#0670FF))
+  .setColorBackground(color(#3990b3))
+  .setColorLabel(color(#000000))
+  .lock();
   /*cp5.addToggle("valve1")
   .setPosition(tunning_values_x_pos+600,tunning_values_y_pos)
   .setSize(50,25)
@@ -230,14 +250,7 @@ void setup() {
   .setColorActive(color(#3e44ec))
   .lock();*/
 
-  cp5.addButton("refreshPorts")
-  .setPosition(tunning_values_x_pos+150,tunning_values_y_pos)
-  .setSize(100,25)
-  .setValue(0)
-  .setColorActive(color(#6fe619))
-  .setColorForeground(color(#0670FF))
-  .setColorBackground(color(#57ebe0))
-  .setColorLabel(color(#000000));
+
 
   cp5.addButton("consoleClearFunc")
   .setPosition(tunning_values_x_pos,tunning_values_y_pos+310)
@@ -245,7 +258,7 @@ void setup() {
   .setValue(0)
   .setColorActive(color(#6fe619))
   .setColorForeground(color(#0670FF))
-  .setColorBackground(color(#57ebe0))
+  .setColorBackground(color(#3990b3))
   .setColorLabel(color(#000000));
 
   cp5.addButton("connectSimulation")
@@ -254,26 +267,10 @@ void setup() {
   .setValue(0)
   .setColorActive(color(#6fe619))
   .setColorForeground(color(#0670FF))
-  .setColorBackground(color(#9b06ff))
+  .setColorBackground(color(#3990b3))
   .setColorLabel(color(#000000));
 
-  cp5.addSlider("slider")
-  .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+310)
-  .setSize(100,25)
-  .setRange(0,200)
-  .setValue(128);
 
-  cp5.getController("slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
-
-  setMaxTemp=cp5.addButton("SetMaxTemp")
-  .setPosition(tunning_values_x_pos+275,tunning_values_y_pos+350)
-  .setSize(100,25)
-  .setValue(0)
-  .setColorActive(color(#6fe619))
-  .setColorForeground(color(#0670FF))
-  .setColorBackground(color(#57ebe0))
-  .setColorLabel(color(#000000))
-  .lock();
 
 cp5.addTextlabel("label")
 .setText("Logs")
@@ -293,6 +290,7 @@ cp5.addTextlabel("label")
 
  console = cp5.addConsole(myTextarea);
 
+
 myTextlabelB = new Textlabel(cp5,"Input",tunning_values_x_pos+700,tunning_values_y_pos+75,400,200);
 myTextlabelB.setColorValue(#FFFFFF);
 myTextlabelB.setFont(createFont("Helvetica",14));
@@ -308,80 +306,128 @@ myTextlabelB.setFont(createFont("Helvetica",14));
   ;
 
 
-                temperatureKnob = cp5.addKnob("Temperature")
-               .setFont(createFont("Helvetica", 8))
-               .setRange(0,200)
-               .setValue(temp_sensor_1)
-               .setPosition(tunning_values_x_pos+410,tunning_values_y_pos+100)
-               .setRadius(50)
-               .setNumberOfTickMarks(10)
-               .setTickMarkLength(4)
-               .snapToTickMarks(false)
-               .setColorForeground(color(#eb5757))
-               .setColorBackground(color(#616061))
-               .setColorActive(color(255,255,0))
-               .setDragDirection(Knob.VERTICAL)
-               .setResolution(0.01)
-               .lock()
-               .setMin(0)
-               .setMax(200)
-               ;
+// Meter Scale for temperature
+  String[] scaleLabelsT = {"0", "20", "40", "60", "80", "100",  "120",  "140", "160",  "180",  "200" };     
+    //Meter Scale for pressure
+  String[] scaleLabelsH = {"0", "10", "20"};
+    
+    m1 = new Meter(this, tunning_values_x_pos+410,tunning_values_y_pos+100);
+    m1.setMeterWidth(int(180));
+        m1.setScaleLabels(scaleLabelsT);
+  // Adjust font color of meter value  
+    m1.setTitleFontSize(20);
+    m1.setTitle("In Temperature (C)");
+    m1.setScaleFontSize(12);
+    m1.setScaleFontName("Times New Roman bold");
+    m1.setScaleFontColor(color(200, 30, 70));
+    m1.setArcThickness(5);
+    m1.setMaxScaleValue(200);
+    m1.setNeedleThickness(3);
+    m1.setMinInputSignal(0);
+    m1.setMaxInputSignal(200);
+    m1.setFrameColor(color(0, 0, 0));
+    m1.setTitleFontColor(color(0, 0, 0));
+    m1.setPivotPointColor(color(0, 0, 0));
+    m1.setArcColor(color(0, 0, 0));
+    m1.setScaleFontColor(color(0, 0, 0));
+    m1.setTicMarkColor(color(0, 0, 0));
+    m1.setDisplayDigitalMeterValue(true);
+    
+  m2 = new Meter(this, tunning_values_x_pos+590, tunning_values_y_pos+100);
+  m2.setMeterWidth(int(180));
+  m2.setScaleLabels(scaleLabelsH);
 
-                pressureKnob = cp5.addKnob("Pressure")
-               .setFont(createFont("Helvetica", 8))
-               .setRange(0,20)
-               .setValue(press_sensor_1)
-               .setPosition(tunning_values_x_pos+570,tunning_values_y_pos+100)
-               .setRadius(50)
-               .setNumberOfTickMarks(10)
-               .setTickMarkLength(4)
-               .snapToTickMarks(false)
-               .setColorForeground(color(#57ebe0))
-               .setColorBackground(color(#616061))
-               .setColorActive(color(255,255,0))
-               .setDragDirection(Knob.HORIZONTAL)
-               .lock()
-               ;
+  // Adjust font color of meter value  
+    m2.setTitleFontSize(20);
+    m2.setTitle("In Pressure (Bar)");
+    m2.setScaleFontSize(12);
+    m2.setScaleFontName("Times New Roman bold");
+    m2.setScaleFontColor(color(200, 30, 70));
+    m2.setArcThickness(5);
+    m2.setMaxScaleValue(80);
+    m2.setNeedleThickness(3);
+    m2.setMinInputSignal(0);
+    m2.setMaxInputSignal(80);
+    m2.setFrameColor(color(0, 0, 0));
+    m2.setTitleFontColor(color(0, 0, 0));
+    m2.setPivotPointColor(color(0, 0, 0));
+    m2.setArcColor(color(0, 0, 0));
+    m2.setScaleFontColor(color(0, 0, 0));
+    m2.setTicMarkColor(color(0, 0, 0));
+    m2.setDisplayDigitalMeterValue(true);
+  
+    m3 = new Meter(this, tunning_values_x_pos+410,tunning_values_y_pos+210);
+    m3.setMeterWidth(int(180));
+    m3.setScaleLabels(scaleLabelsT);
+  // Adjust font color of meter value  
+    m3.setTitleFontSize(20);
+    m3.setTitleFontName("Arial bold");
+    m3.setTitle("Out Temperature (C)");
+    m3.setScaleFontSize(12);
+    m3.setScaleFontColor(color(200, 30, 70));
+    m3.setArcThickness(5);
+    m3.setMaxScaleValue(200);
+    m3.setNeedleThickness(3);
+    m3.setMinInputSignal(0);
+    m3.setMaxInputSignal(200);
+    m3.setFrameColor(color(0, 0, 0));
+    m3.setTitleFontColor(color(0, 0, 0));
+    m3.setPivotPointColor(color(0, 0, 0));
+    m3.setArcColor(color(0, 0, 0));
+    m3.setScaleFontColor(color(0, 0, 0));
+    m3.setTicMarkColor(color(0, 0, 0));
+    m3.setDisplayDigitalMeterValue(true);
+    
+     m4 = new Meter(this, tunning_values_x_pos+590,tunning_values_y_pos+210);
+    m4.setMeterWidth(int(180));
+    m4.setScaleLabels(scaleLabelsH);
+  // Adjust font color of meter value  
+    m4.setTitleFontSize(20);
+    m4.setTitleFontName("Arial bold");
+    m4.setTitle("Out Pressure (Bar)");
+    m4.setScaleFontSize(12);
+    m4.setScaleFontColor(color(200, 30, 70));
+    m4.setArcThickness(5);
+    m4.setMaxScaleValue(80);
+    m4.setNeedleThickness(3);
+    m4.setMinInputSignal(0);
+    m4.setMaxInputSignal(80);
+    m4.setFrameColor(color(0, 0, 0));
+    m4.setTitleFontColor(color(0, 0, 0));
+    m4.setPivotPointColor(color(0, 0, 0));
+    m4.setArcColor(color(0, 0, 0));
+    m4.setScaleFontColor(color(0, 0, 0));
+    m4.setTicMarkColor(color(0, 0, 0));
+    m4.setDisplayDigitalMeterValue(true);
 
+  
 
-                outTemperatureKnob = cp5.addKnob("Out Temperature")
-               .setFont(createFont("Helvetica", 8))
-               .setRange(0,200)
-               .setValue(temp_sensor_2)
-               .setPosition(tunning_values_x_pos+410,tunning_values_y_pos+250)
-               .setRadius(50)
-               .setNumberOfTickMarks(10)
-               .setTickMarkLength(4)
-               .snapToTickMarks(false)
-               .setColorForeground(color(#eb5757))
-               .setColorBackground(color(#616061))
-               .setColorActive(color(255,255,0))
-               .setDragDirection(Knob.VERTICAL)
-               .setResolution(0.01)
-               .lock()
-               .setMin(0)
-               .setMax(200)
-               ;
-
-                outPressureKnob = cp5.addKnob("Out Pressure")
-                .setFont(createFont("Helvetica", 8))
-               .setRange(0,20)
-               .setValue(press_sensor_2)
-               .setPosition(tunning_values_x_pos+570,tunning_values_y_pos+250)
-               .setRadius(50)
-               .setNumberOfTickMarks(10)
-               .setTickMarkLength(4)
-               .snapToTickMarks(false)
-               .setColorForeground(color(#57ebe0))
-               .setColorBackground(color(#616061))
-               .setColorActive(color(255,255,0))
-               .setDragDirection(Knob.HORIZONTAL)
-               .lock()
-               ;
    myTextlabelB.draw(this);
    img = loadImage("img/logo-inv.png");
    diagram = loadImage("img/diagram.png");
    diagram.resize(0, 550);
+   
+   
+   //dropdownlist should be intialiazed at last
+    d1 = cp5.addDropdownList("serialPortList")
+  .setPosition(tunning_values_x_pos, tunning_values_y_pos-65)
+  .setOpen(false)
+  .setBackgroundColor(color(#1986e6))
+  .setColorActive(color(#0670FF))
+  .setColorBackground(color(#3990b3))
+  .setColorCaptionLabel(color(#0670FF))
+  .setColorForeground(color(#0670FF))
+  .setColorLabel(color(#000000))
+  .setColorValue(color(#0670FF))
+  .setColorValueLabel(color(#000000))
+  .setItemHeight(25)
+  .setHeight(200)
+  .setBarHeight(25)
+  .setWidth(155)
+  .bringToFront();
+
+  customize(d1);
+   
 
 
 }
@@ -408,15 +454,15 @@ public void transmitAllJSON() {
   if(serial_port != null)
   {
     _json.setFloat("start_stop",startButton.getValue());
-    if(startButton.getValue() == 1)
+    /*if(startButton.getValue() == 1)
 {
-     _json.setFloat("max temp", max_temp);
-     _json.setFloat("close all valve",0);
+     _json.setFloat("max_temp", max_temp);
+     _json.setInt("close_all_valves",0);
      if (closeValve)
      {
-     _json.setFloat("close all valve",1);
+     _json.setInt("close_all_valves",1);
      }
-}
+}*/
 
     // Why is this so slow? 2.5 seconds.
     serial_port.write(_json.toString().replace("\n", "").replace("\r", ""));
@@ -605,6 +651,15 @@ public void SetMaxTemp()
     if(heater){stroke(#f30404);}else{stroke(#6d6b6b);}
     rect(DIAG_X+75, DIAG_Y+200, 20, 100, 4);
     rect(DIAG_X+165, DIAG_Y+200, 20, 100, 4);
+    
+    
+    // 3.2
+    if(valve_1){stroke(#03f5e3);}else{stroke(#6d6b6b);}
+    rect(DIAG_X+115, DIAG_Y+375, 37, 40, 4);
+    
+    // 3.3
+    if(valve_2){stroke(#03f5e3);}else{stroke(#6d6b6b);}
+    rect(DIAG_X+250, DIAG_Y+375, 37, 40, 4);
 
   }
 
@@ -619,7 +674,46 @@ public void SetMaxTemp()
       ddl.addItem(Serial.list()[i], i);
     }
   }
+    void createBoxes()
+    {
+      
+    stroke(0, 0, 0);
+     //start
+    rect(50, 20, 170, 120);
+     //box around Setting values
+    //rect(240, 20, 130, 120);
+   
+   //box around  guages
+  rect(465, 185, 370, 230);   
+ 
+   //box around logs
+    rect(50, 180, 390, 250);
+    
+   //Outputs
+   //rect(465, 20, 370, 140);   
+  }
+  
+  void texts()
+  {
+  textFont(createFont("Helvetica",14));
+     //box around connect
+    fill(#ffffff);
+    text("Start", tunning_values_x_pos, tunning_values_y_pos-75);  
+    //text("Inputs",tunning_values_x_pos+190, tunning_values_y_pos-75);
+    text("Guages",tunning_values_x_pos+425, tunning_values_y_pos+90);
+ 
 
+  }
+  
+  
+  
+ void showMeters()
+ {
+    m1.updateMeter(int(temp_sensor_1));
+    m2.updateMeter(int(press_sensor_1));
+    m3.updateMeter(int(temp_sensor_2));
+    m4.updateMeter(int(press_sensor_2));
+ }
   /**
   Main function to create the user interface
   @param none
@@ -627,8 +721,19 @@ public void SetMaxTemp()
   */
   void draw()
   {
-    background(#112233);
-    image(img, 1180-20-(369/3), 20, 369/3, 295/3);
+    background(#3d7c91);
+    image(img, 1280-20-(369/3), 20, 369/3, 295/3);
     image(diagram, DIAG_X, DIAG_Y);
     diagramControl();
+           
+    showMeters();
+    
+    createBoxes();
+    texts();
+
+
+    
   }
+   
+   
+  
