@@ -298,21 +298,14 @@ void turnOFFAir()
   aircomp = false;
 }
 
+void recieveJSON(){
+ DynamicJsonDocument doc_in(capacity_in);       // Create a Json Document for the incomming json-string 
+ input = Serial.readStringUntil('\n');          // Read the incomming json-string
+ deserializeJson(doc_in, input);                // Deserialize the json-string
+ start = doc_in["start_stop"];                  // Set the start value from the json-string
+}
 
-
-void loop() {
-  // Find temperatures and pressure values and then send them to the UI:
-  findTemperature();
-  findPressure();
-  
-  if(Serial.available()){
-    DynamicJsonDocument doc_in(capacity_in);    // Create a Json Document for the incomming json-string 
-    input = Serial.readStringUntil('\n');       // Read the incomming json-string
-    deserializeJson(doc_in, input);             // Deserialize the json-string
-
-    start = doc_in["start_stop"];               // Set the start value from the json-string
-    }
-
+void sendJSON(){
   DynamicJsonDocument doc_out(capacity_out);    // Create a new Json Document for the outgoing json-string
   doc_out["press_sensor_1"] = 120;              // Set all the values (some are hardcoded for the time being – should of course be changed in the future):
   doc_out["temp_sensor_1"] = temp1;
@@ -329,8 +322,19 @@ void loop() {
   
   serializeJson(doc_out, Serial);               // Serialize the Json Document and send the json-string:
   Serial.print("\n");
+}
 
+
+
+void loop() {
+  // Find temperatures and pressure values and then send them to the UI:
+  findTemperature();
+  findPressure();
+  
+  if(Serial.available()){
+    recieveJSON();
+    }
+    
+  sendJSON();
   sterilizationProcess();
-
-
 }
