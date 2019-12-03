@@ -35,6 +35,7 @@ boolean water_pump = false; // On-off value for the water pump
 boolean valve_0 = false;    // On-off value for valve 0
 boolean valve_1 = false;    // On-off value for valve 1
 boolean valve_2 = false;    // On-off value for valve 2
+boolean valve_3 = false;    // On-off value for valve 3
 
 
 void setup() {
@@ -46,8 +47,6 @@ void setup() {
   Serial.begin(9600);
   // wait for MAX chip to stabilize
   delay(500);
-//  pinMode(in, INPUT_PULLUP);   // Set the pin IN with npull up to bias the diode
-//  pinMode(led, OUTPUT);
 
 }
 
@@ -56,10 +55,10 @@ void sterilizationProcess()
 {
   // Start or continue the sterilization process if the UI sets start == true
   if(start == 1 && step == 0){
-    closeValve(10);
-    closeValve(11);                            // Close all valves
-    closeValve(12);
-    closeValve(13);  
+    closeValve(VALVE_0);
+    closeValve(VALVE_1);                      // Close all valves
+    closeValve(VALVE_2);
+    closeValve(VALVE_3);  
     if(start == 0){                           // Check if the program is told to abort the process
       // Do the abort-procedure for this step.
     }
@@ -68,10 +67,10 @@ void sterilizationProcess()
     }
   }
   else if (start == 1 && step == 1){
-    openValve(10);                            // Open input valve (3.1)
+    openValve(VALVE_0);                       // Open input valve (3.1)
     pointValve();                             // Point 2.1 to the waterpump
     // Check if the main champer is filled?
-    closeValve(10);                           // Close input valve (3.1)
+    closeValve(VALVE_0);                      // Close input valve (3.1)
     if(start == 0){                           // Check if the program is told to abort the process
       // Do the abort-procedure for this step.
       step = 0;                               // Stop the process
@@ -82,7 +81,7 @@ void sterilizationProcess()
   }
   else if(start == 1 && step == 2){
     turnONHeater();                           // Turn on heaters (7)
-    if(temp > 99.99){                         // Check if water is boiling (Also use pressure values to check it?)
+    if(temp1 > 99.99){                         // Check if water is boiling (Also use pressure values to check it?)
       step = 3;
       turnOFFHeater();                        // Turn off heaters (7)
     }
@@ -92,21 +91,21 @@ void sterilizationProcess()
     }
   }
   else if(start == 1 && step == 3){
-    openValve(11);                            // Open output valve (3.2)
+    openValve(VALVE_1);                       // Open output valve (3.2)
     // wait for flush
-    closeValve(11);                           // Close output valve (3.2)
+    closeValve(VALVE_1);                      // Close output valve (3.2)
     // wait one minute
     // if one minute has passed
     step = 4;
     if(start == 0){                           // Check if the program is told to abort the process
-      openValve(11);                          // Open output valve (3.2)            
-      openValve(10);                          // Open input valve (3.1)
+      openValve(VALVE_1);                     // Open output valve (3.2)            
+      openValve(VALVE_0);                     // Open input valve (3.1)
       pointValve();                           // Point 2.1 to the disconnected end
       step = 0;                               // Stop the process
     }
   }
   else if(start == 1 && step == 4){
-    openValve(12);                            // Open the draining vessel valve (3.3)
+    openValve(VALVE_2);                       // Open the draining vessel valve (3.3)
     step = 5;
     if(start == 0){                           // Check if the program is told to abort the process
       // Do the abort-procedure for this step.
@@ -114,9 +113,9 @@ void sterilizationProcess()
     }
   }
   else if(start == 1 && step == 5){
-    openValve(10);                            // Open input valve (3.1)
-    openValve(11);                            // Open output valve (3.2)
-    openValve(13);                            // Open the end valve (2.2)
+    openValve(VALVE_0);                       // Open input valve (3.1)
+    openValve(VALVE_1);                       // Open output valve (3.2)
+    openValve(VALVE_3);                       // Open the end valve (2.2)
     pointValve();                             // Point 2.1 to the air compressor
     step = 6;
     if(start == 0){                           // Check if the program is told to abort the process
@@ -135,44 +134,122 @@ void sterilizationProcess()
     }
   }
   else if(start == 1 && step == 7){
-    closeValve(10);                           // Close input valve (3.1)
-    closeValve(11);                           // Close output valve (3.2)
-    closeValve(12);                           // Close the draining vessel valve (3.3)
-    closeValve(13);                           // Close the end valve (2.2)
+    closeValve(VALVE_0);                      // Close input valve (3.1)
+    closeValve(VALVE_1);                      // Close output valve (3.2)
+    closeValve(VALVE_2);                      // Close the draining vessel valve (3.3)
+    closeValve(VALVE_3);                      // Close the end valve (2.2)
     step = 8;
-    if(start == 0){                            // Check if the program is told to abort the process
+    if(start == 0){                           // Check if the program is told to abort the process
       // Do the abort-procedure for this step.
-      step = 0;                                // Stop the process
+      step = 0;                               // Stop the process
     }
   }
+  else if (start == 1 && step == 8){
+    openValve(VALVE_0);                       // Open input valve (3.1)
+    pointValve();                             // Point 2.1 to the waterpump
+    // Check if the main champer is filled?
+    closeValve(VALVE_0);                      // Close input valve (3.1)
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+    else {
+      step = 9;    
+    }
+  }
+  else if(start == 1 && step == 9){
+    turnONHeater();                           // Turn on heaters (7)
+    if(temp1 > 99.99){                         // Check if water is boiling (Also use pressure values to check it?)
+      // Wait for all the water to change from the liquid state to the gas state?
+      step = 10;
+      turnOFFHeater();                        // Turn off heaters (7)
+    }
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == 1 && step == 10){
+    openValve(VALVE_1);                       // Open output valve (3.2)
+    // wait for steam to be injected
+    closeValve(VALVE_1);                      // Close output valve (3.2)
+    // wait for steam to sterialize
+    step = 11;
+    if(start == 0){                           // Check if the program is told to abort the process
+      openValve(VALVE_1);                     // Open output valve (3.2)            
+      openValve(VALVE_0);                     // Open input valve (3.1)
+      pointValve();                           // Point 2.1 to the disconnected end
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == 1 && step == 11){
+    if (temp2 < 130){
+      step = 7;                                // If the temperature drops, try to inject steam again (Step 7)
+    }
+    else if(start == 0){                      // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+    else {
+      step = 12;
+    }
+  }
+  else if(start == 1 && step == 12){
+    openValve(VALVE_2);                       // Open the draining vessel valve (3.3)
+    openValve(VALVE_3);                       // Open the end valve (2.2)
+    openValve(VALVE_0);                       // Open the input valve (3.1)
+    openValve(VALVE_1)                        // Open the input valve (3.2)
+    pointValve();                             // Point 2.1 to the air compressor
+    turnONAir();                              // Turn on air compressor and inject compressed air.
+    // wait for air to drain the tubes
+    turnOFFAir();                             // Turn off air compressor
+    step = 13;
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == 1 && step == 13){
+    closeValve(VALVE_0);                      // Close input valve (3.1)
+    closeValve(VALVE_1);                      // Close output valve (3.2)
+    closeValve(VALVE_2);                      // Close the draining vessel valve (3.3)
+    closeValve(VALVE_3);                      // Close the end valve (2.2)
+    step = 0;
+    start = 0;
 }
 
 
 void openValve(valve)
 {
   digitalWrite(valve, HIGH);
-  if(valve == 10){
+  if(valve == VALVE_0){
     valve_0 = true;
   }
-  else if(valve == 11){
+  else if(valve == VALVE_1){
     valve_1 = true;
   }
-  else if(valve == 12){
+  else if(valve == VALVE_2){
     valve_2 = true;
+  }
+  else if(valve == VALVE_3){
+    valve_3 = true
   }
 }
 
 void closeValve(valve)
 {
   digitalWrite(valve, LOW);
-  if(valve == 10){
+  if(valve == VALVE_0){
     valve_0 = false;
   }
-  else if(valve == 11){
+  else if(valve == VALVE_1){
     valve_1 = false;
   }
-  else if(valve == 12){
+  else if(valve == VALVE_2){
     valve_2 = false;
+  }
+  else if(valve == VALVE_3){
+    valve_3 = false;
   }
 }
 
@@ -231,21 +308,21 @@ void loop() {
     start = doc_in["start_stop"];               // Set the start value from the json-string
     }
 
-  DynamicJsonDocument doc_out(capacity_out);  // Create a new Json Document for the outgoing json-string
-  doc_out["press_sensor_1"] = 120;            // Set all the values (some are hardcoded for the time being – should of course be changed in the future):
-  doc_out["temp_sensor_1"] = 30;
+  DynamicJsonDocument doc_out(capacity_out);    // Create a new Json Document for the outgoing json-string
+  doc_out["press_sensor_1"] = 120;              // Set all the values (some are hardcoded for the time being – should of course be changed in the future):
+  doc_out["temp_sensor_1"] = temp1;
   doc_out["press_sensor_2"] = 120;
-  doc_out["temp_sensor_2"] = 30;
-  doc_out["valve_state_1"] = 0;
+  doc_out["temp_sensor_2"] = temp2;
+  doc_out["valve_state_1"] = 0;               
   doc_out["max_temp"] = max_temp;
   doc_out["heater"] = heater;
   doc_out["water_pump"] = water_pump;
   doc_out["valve_0"] = valve_0;
   doc_out["valve_1"] = valve_1;
   doc_out["valve_2"] = valve_2;
-  doc_out["uControllerState"] = 20;           // What is this value exactly??
+  doc_out["uControllerState"] = 20;             // What is this value exactly??
   
-  serializeJson(doc_out, Serial);             // Serialize the Json Document and send the json-string:
+  serializeJson(doc_out, Serial);               // Serialize the Json Document and send the json-string:
   Serial.print("\n");
 
   sterilizationProcess();
