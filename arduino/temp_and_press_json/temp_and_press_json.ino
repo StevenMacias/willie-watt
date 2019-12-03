@@ -1,69 +1,254 @@
-/*
-
-  Thermometer based on 1n4148 silicon diode used as temperature sensor.The thermometer is based on the diode characteristic that the increase of the temperature its forward voltage (VF) is lowered by 2,2mV / ° C.
-Fixing the value of Vf = VF0 at ambient temperature t0, the temperature value
-t is calculated with the following formula:
-
-t= t0 - [vf(t)- vf0]* K
-
-with K = 1 / 2,2mV
-
-The value of Vf (t) = dtemp -vf0 is obtained by averaging values of 1024 by acquiring as many vf values
-
-The result of t is shown on the serial monitor
-*/
-
 #include <ArduinoJson.h>
+#include <SPI.h>
+#include "Adafruit_MAX31855.h"
 
-int led = 9;           // the PWM pin the LED is attached to
-int brightness = 0;    // how bright the LED is
+#define MAXDO   2
+#define MAXCLK  3
+#define MAXCS1  4
+#define MAXCS2  5
+#define WATER_PUMP  8
+#define HEATER      9
+#define VALVE_0     10      // The input valve (3.1)
+#define VALVE_1     11      // The output valve (3.2)
+#define VALVE_2     12      // The draining vessel valve (3.3)
+#define VALVE_3     13      // The end valve (2.2)
 
 
-// set pin numbers:
+const size_t capacity_in = JSON_OBJECT_SIZE(1) + 20;       // The size of the incomming json (Calculated from this assistant: https://arduinojson.org/v6/assistant/)
+const size_t capacity_out = JSON_OBJECT_SIZE(12) + 190;    // The size of the outgoing json (Calculated from this assistant: https://arduinojson.org/v6/assistant/)
 
-const int in = A0;          // used to bias the diode  anode
-const int t0 = 20.3;
-const float vf0 = 573.44;
+
+// initialize the Thermocouple
+Adafruit_MAX31855 thermocouple(MAXCLK, MAXCS1, MAXDO);
+Adafruit_MAX31855 thermocouple2(MAXCLK, MAXCS2, MAXDO);
+
 // variables will change:
-
 int i;
-float dtemp, dtemp_avg, t, b;
+float max_temp = 110;       // Default safe value for temperature
+String input;               // Input json string 
+int start = 0;              // Start/stop value from the input json string
+int step = 0;               // Step counter
+float temp1;                // The first temperature value
+float temp2;                // The secound temperature value
+boolean heater = false;     // On-off value for the heaters
+boolean water_pump = false; // On-off value for the water pump
+boolean valve_0 = false;    // On-off value for valve 0
+boolean valve_1 = false;    // On-off value for valve 1
+boolean valve_2 = false;    // On-off value for valve 2
+
 
 void setup() {
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(12, OUTPUT);
   Serial.begin(9600);
-  pinMode(in, INPUT_PULLUP);            // set the  pin IN with npull up to bias the diode
-  pinMode(led, OUTPUT);
+  // wait for MAX chip to stabilize
+  delay(500);
+//  pinMode(in, INPUT_PULLUP);   // Set the pin IN with npull up to bias the diode
+//  pinMode(led, OUTPUT);
 
 }
 
-void loop() {
-  DynamicJsonDocument doc(1024);
-  dtemp_avg = 0;
-  for (i = 0; i < 1024; i++) {
-    float vf = analogRead(A0) * (4976.30 / 1023.000);
-    //Serial.println(vf);
-    dtemp = (vf - vf0) * 0.4545454;
-    dtemp_avg = dtemp_avg + dtemp;
+// Function that control the sterilization process
+void sterilizationProcess()
+{
+  // Start or continue the sterilization process if the UI sets start == true
+  if(start == 1 && step == 0){
+    closeValve(10);
+    closeValve(11);                            // Close all valves
+    closeValve(12);
+    closeValve(13);  
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+    }
+    else {
+      step = 1;
+    }
   }
-  t = t0 - dtemp_avg / 1024;
-  //Serial.print("temperature in Celcius degree)   = " );
-  //Serial.println(t);
+  else if (start == 1 && step == 1){
+    openValve(10);                            // Open input valve (3.1)
+    pointValve();                             // Point 2.1 to the waterpump
+    // Check if the main champer is filled?
+    closeValve(10);                           // Close input valve (3.1)
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+    else {
+      step = 2;    
+    }
+  }
+  else if(start == 1 && step == 2){
+    turnONHeater();                           // Turn on heaters (7)
+    if(temp > 99.99){                         // Check if water is boiling (Also use pressure values to check it?)
+      step = 3;
+      turnOFFHeater();                        // Turn off heaters (7)
+    }
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == 1 && step == 3){
+    openValve(11);                            // Open output valve (3.2)
+    // wait for flush
+    closeValve(11);                           // Close output valve (3.2)
+    // wait one minute
+    // if one minute has passed
+    step = 4;
+    if(start == 0){                           // Check if the program is told to abort the process
+      openValve(11);                          // Open output valve (3.2)            
+      openValve(10);                          // Open input valve (3.1)
+      pointValve();                           // Point 2.1 to the disconnected end
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == 1 && step == 4){
+    openValve(12);                            // Open the draining vessel valve (3.3)
+    step = 5;
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == 1 && step == 5){
+    openValve(10);                            // Open input valve (3.1)
+    openValve(11);                            // Open output valve (3.2)
+    openValve(13);                            // Open the end valve (2.2)
+    pointValve();                             // Point 2.1 to the air compressor
+    step = 6;
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == 1 && step == 6){
+    turnONAir();                              // Turn on air compressor and inject compressed air.
+    // wait for air to drain the tubes
+    turnOFFAir();                             // Turn off air compressor
+    step = 7;
+    if(start == 0){                           // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                               // Stop the process
+    }
+  }
+  else if(start == 1 && step == 7){
+    closeValve(10);                           // Close input valve (3.1)
+    closeValve(11);                           // Close output valve (3.2)
+    closeValve(12);                           // Close the draining vessel valve (3.3)
+    closeValve(13);                           // Close the end valve (2.2)
+    step = 8;
+    if(start == 0){                            // Check if the program is told to abort the process
+      // Do the abort-procedure for this step.
+      step = 0;                                // Stop the process
+    }
+  }
+}
 
-    // set the brightness of pin 9:
 
-  b = abs(map(t, 22, 30, 0, 255));
-  //Serial.println(b);
+void openValve(valve)
+{
+  digitalWrite(valve, HIGH);
+  if(valve == 10){
+    valve_0 = true;
+  }
+  else if(valve == 11){
+    valve_1 = true;
+  }
+  else if(valve == 12){
+    valve_2 = true;
+  }
+}
 
-  doc["press_sensor_1"] = "1";
-  doc["temp_sensor_1"] = t;
-  doc["valve_state_1"] = 1;
-  doc["uControllerState"] = 20;
+void closeValve(valve)
+{
+  digitalWrite(valve, LOW);
+  if(valve == 10){
+    valve_0 = false;
+  }
+  else if(valve == 11){
+    valve_1 = false;
+  }
+  else if(valve == 12){
+    valve_2 = false;
+  }
+}
 
-  serializeJson(doc, Serial);
-  Serial.println("\n");
 
-  // change the brightness for next time through the loop:
-  brightness = b;
-  analogWrite(led, brightness);
+void pointValve()
+{
+  //TODO: Implement pointValve. It should probably take a parameter regarding to which way it should point
+}
+
+// Calculating the temperature t:
+void findTemperature()
+{   
+  temp1 = thermocouple.readCelsius();
+  temp2 = thermocouple2.readCelsius();
+}
+
+void findPressure()
+{
+  // TODO: Implement findPressure. It I see no problem in this function to get and set both pressure values.
+}
+
+void turnONHeater()
+{
+  digitalWrite(HEATER, HIGH);
+  heater = true;
+}
+
+void turnOFFHeater()
+{
+  digitalWrite(HEATER, LOW);
+  heater = false;
+}
+
+void turnONAir()
+{
+  // TODO: Implement turnONAir.
+}
+
+void turnOFFAir()
+{
+  // TODO: Implement turnOFFAir. 
+}
+
+
+
+void loop() {
+  // Find temperatures and pressure values and then send them to the UI:
+  findTemperature();
+  findPressure();
+  
+  if(Serial.available()){
+    DynamicJsonDocument doc_in(capacity_in);    // Create a Json Document for the incomming json-string 
+    input = Serial.readStringUntil('\n');       // Read the incomming json-string
+    deserializeJson(doc_in, input);             // Deserialize the json-string
+
+    start = doc_in["start_stop"];               // Set the start value from the json-string
+    }
+
+  DynamicJsonDocument doc_out(capacity_out);  // Create a new Json Document for the outgoing json-string
+  doc_out["press_sensor_1"] = 120;            // Set all the values (some are hardcoded for the time being – should of course be changed in the future):
+  doc_out["temp_sensor_1"] = 30;
+  doc_out["press_sensor_2"] = 120;
+  doc_out["temp_sensor_2"] = 30;
+  doc_out["valve_state_1"] = 0;
+  doc_out["max_temp"] = max_temp;
+  doc_out["heater"] = heater;
+  doc_out["water_pump"] = water_pump;
+  doc_out["valve_0"] = valve_0;
+  doc_out["valve_1"] = valve_1;
+  doc_out["valve_2"] = valve_2;
+  doc_out["uControllerState"] = 20;           // What is this value exactly??
+  
+  serializeJson(doc_out, Serial);             // Serialize the Json Document and send the json-string:
+  Serial.print("\n");
+
+  sterilizationProcess();
+
 
 }

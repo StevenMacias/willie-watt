@@ -72,6 +72,7 @@ int uControllerState = 0;
 // Control variables
 boolean heater, water_pump, valve_0,valve_1,valve_2 = false;
 
+
 void PRINT(String s)
 {
   if(DEBUG_ON)
@@ -116,6 +117,7 @@ void serialEvent(Serial serial_port) {
        //outTemperatureKnob.setValue(temp_sensor_2);
        //pressureKnob.setValue(press_sensor_1);
        //outPressureKnob.setValue(press_sensor_2);
+
 
 
      /*if(valve_state_1==0){
@@ -196,6 +198,7 @@ void setup() {
   
 
 
+
   // create a toggle and change the default look to a (on/off) switch look
   cp5.addToggle("connect")
   .setPosition(tunning_values_x_pos,tunning_values_y_pos+10)
@@ -204,6 +207,7 @@ void setup() {
   .setMode(ControlP5.SWITCH)
   .setColorBackground(color(#5c5c5c))
   .setColorActive(color(#ba2929));
+
 
    startButton = cp5.addToggle("Start")
   .setPosition(tunning_values_x_pos+80,tunning_values_y_pos+10)
@@ -214,6 +218,7 @@ void setup() {
   .setColorActive(color(#ba2929));
 
 /*
+
   closeAllValve =cp5.addButton("closeAllValve")
   .setPosition(tunning_values_x_pos+190,tunning_values_y_pos-65)
   .setSize(110,25)
@@ -241,6 +246,7 @@ void setup() {
   .setColorBackground(color(#3990b3))
   .setColorLabel(color(#000000))
   .lock();
+
   /*cp5.addToggle("valve1")
   .setPosition(tunning_values_x_pos+600,tunning_values_y_pos)
   .setSize(50,25)
@@ -251,7 +257,6 @@ void setup() {
   .lock();*/
 
 
-
   cp5.addButton("consoleClearFunc")
   .setPosition(tunning_values_x_pos,tunning_values_y_pos+310)
   .setSize(100,25)
@@ -259,16 +264,19 @@ void setup() {
   .setColorActive(color(#6fe619))
   .setColorForeground(color(#0670FF))
   .setColorBackground(color(#3990b3))
+
   .setColorLabel(color(#000000));
 
   cp5.addButton("connectSimulation")
   .setPosition(tunning_values_x_pos,tunning_values_y_pos+350)
+
   .setSize(100,25)
   .setValue(0)
   .setColorActive(color(#6fe619))
   .setColorForeground(color(#0670FF))
   .setColorBackground(color(#3990b3))
   .setColorLabel(color(#000000));
+
 
 
 
@@ -402,6 +410,7 @@ myTextlabelB.setFont(createFont("Helvetica",14));
 
   
 
+
    myTextlabelB.draw(this);
    img = loadImage("img/logo-inv.png");
    diagram = loadImage("img/diagram.png");
@@ -428,6 +437,7 @@ myTextlabelB.setFont(createFont("Helvetica",14));
 
   customize(d1);
    
+
 
 
 }
@@ -463,6 +473,7 @@ public void transmitAllJSON() {
      _json.setInt("close_all_valves",1);
      }
 }*/
+
 
     // Why is this so slow? 2.5 seconds.
     serial_port.write(_json.toString().replace("\n", "").replace("\r", ""));
@@ -661,6 +672,7 @@ public void SetMaxTemp()
     if(valve_2){stroke(#03f5e3);}else{stroke(#6d6b6b);}
     rect(DIAG_X+250, DIAG_Y+375, 37, 40, 4);
 
+
   }
 
   void customize(DropdownList ddl) {
@@ -732,7 +744,7 @@ public void SetMaxTemp()
     texts();
 
 
-    
+
   }
    
    
