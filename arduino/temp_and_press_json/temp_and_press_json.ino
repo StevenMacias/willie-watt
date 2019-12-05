@@ -2,16 +2,18 @@
 #include <SPI.h>
 #include "Adafruit_MAX31855.h"
 
+#define PRESSURE_1 0
+#define PRESSURE_2 1
 #define MAXDO   2
 #define MAXCLK  3
 #define MAXCS1  4
 #define MAXCS2  5
 #define AIR_COMPRESSOR  6
-#define WATER_PUMP  8
-#define HEATER      9
-#define VALVE_0     10      // The input valve (3.1)
+#define WATER_PUMP  12      // CHANGE THIS TO 8 TO ACTUALLY ASSIGN IT TO THE WATER PUMP
+#define HEATER      9       // CHANGE THIS TO 10 TO ACTUALLY ASSIGN IT TO THE HEATER
+#define VALVE_0     8       // The input valve (3.1)
 #define VALVE_1     11      // The output valve (3.2)
-#define VALVE_2     12      // The draining vessel valve (3.3)
+#define VALVE_2     10      // The draining vessel valve (3.3)
 #define VALVE_3     13      // The end valve (2.2)
 
 
@@ -31,13 +33,16 @@ int start = 0;              // Start/stop value from the input json string
 int step = 0;               // Step counter
 float temp1;                // The first temperature value
 float temp2;                // The secound temperature value
-boolean aircomp = false;    // on-off value for the air compressor
+const float OffSet = 0.00;  // Offset value;
+boolean aircomp = false;    // On-off value for the air compressor
 boolean heater = false;     // On-off value for the heaters
 boolean water_pump = false; // On-off value for the water pump
 boolean valve_0 = false;    // On-off value for valve 0
 boolean valve_1 = false;    // On-off value for valve 1
 boolean valve_2 = false;    // On-off value for valve 2
 boolean valve_3 = false;    // On-off value for valve 3
+float V1, V2, P1, P2;
+
 
 
 void setup() {
@@ -46,10 +51,41 @@ void setup() {
   pinMode(10, OUTPUT);
   pinMode(11, OUTPUT);
   pinMode(12, OUTPUT);
+  digitalWrite(8, HIGH);
+  digitalWrite(9, HIGH);
+  digitalWrite(10, HIGH);
+  digitalWrite(11, HIGH);
+  digitalWrite(12, HIGH);
   Serial.begin(9600);
   // wait for MAX chip to stabilize
   delay(500);
 
+}
+
+// Function for the techdemo
+void techDemo()
+{
+  if(start == 1 && step == 0){
+    turnONWaterPump();
+    wait(1);
+    turnOFFWaterPump();
+    step = 1;
+    if(start == 0){
+      turnOFFWaterPump();
+      step = 0;
+    }
+  }
+  else if(start == 1 && step == 1){
+    turnONHeater();
+    wait(5);
+    turnOFFHeater();
+    if(start == 0){
+      turnOFFHeater();
+      step = 0;
+    }
+    start = 0;
+    step = 0;
+  }
 }
 
 // Function that control the sterilization process
@@ -224,7 +260,7 @@ void sterilizationProcess()
 
 void openValve(int valve)
 {
-  digitalWrite(valve, HIGH);
+  digitalWrite(valve, LOW);
   if(valve == VALVE_0){
     valve_0 = true;
   }
@@ -241,7 +277,7 @@ void openValve(int valve)
 
 void closeValve(int valve)
 {
-  digitalWrite(valve, LOW);
+  digitalWrite(valve, HIGH);
   if(valve == VALVE_0){
     valve_0 = false;
   }
@@ -271,31 +307,49 @@ void findTemperature()
 
 void findPressure()
 {
-  // TODO: Implement findPressure. It I see no problem in this function to get and set both pressure values.
+  //Connect first pressuresensor (8.1) to Analog 0
+  V1 = analogRead(PRESSURE_1) * 5.00 / 1024;     //Sensor output voltage
+  P1 = (V1 - OffSet) * 400;                      //Calculate water pressure
+
+  //Connect second pressuresensor (9.1) to Analog 1
+  V2 = analogRead(PRESSURE_2) * 5.00 / 1024;     //Sensor output voltage
+  P2 = (V1 - OffSet) * 400;                      //Calculate water pressure
 }
 
 void turnONHeater()
 {
-  digitalWrite(HEATER, HIGH);
+  digitalWrite(HEATER, LOW);
   heater = true;
 }
 
 void turnOFFHeater()
 {
-  digitalWrite(HEATER, LOW);
+  digitalWrite(HEATER, HIGH);
   heater = false;
 }
 
 void turnONAir()
 {
-  digitalWrite(AIR_COMPRESSOR, HIGH);
+  digitalWrite(AIR_COMPRESSOR, LOW);
   aircomp = true;
 }
 
 void turnOFFAir()
 {
-  digitalWrite(AIR_COMPRESSOR, LOW);
+  digitalWrite(AIR_COMPRESSOR, HIGH);
   aircomp = false;
+}
+
+void turnONWaterPump()
+{
+  digitalWrite(WATER_PUMP, LOW);
+  water_pump = true; 
+}
+
+void turnOFFWaterPump()
+{
+  digitalWrite(WATER_PUMP, HIGH);
+  water_pump = false; 
 }
 
 void recieveJSON(){
@@ -307,9 +361,9 @@ void recieveJSON(){
 
 void sendJSON(){
   DynamicJsonDocument doc_out(capacity_out);    // Create a new Json Document for the outgoing json-string
-  doc_out["press_sensor_1"] = 120;              // Set all the values (some are hardcoded for the time being – should of course be changed in the future):
+  doc_out["press_sensor_1"] = 0;                // Set all the values (some are hardcoded for the time being – should of course be changed in the future):
   doc_out["temp_sensor_1"] = temp1;
-  doc_out["press_sensor_2"] = 120;
+  doc_out["press_sensor_2"] = 0;
   doc_out["temp_sensor_2"] = temp2;
   doc_out["valve_state_1"] = 0;               
   doc_out["max_temp"] = max_temp;
@@ -326,8 +380,8 @@ void sendJSON(){
 
 void wait(int j){
   j = j*2;
-  for (int i=0; i<j; i++) {             // What do you think about this solution in order to wait? It will stop the program for 0.5 second using delay, and then monitor temp and pressure, and then stop for 0.5 second again, and repeating the process for j seconds.
-  findTemperature();
+  for (int i=0; i<j; i++) {             // What do you think about this solution in order to wait? It will stop the program for 0.5 second using delay, and then monitor temp and pressure, and then stop for 0.5 second again, and repeating the process for j seconds. 
+  findTemperature();                    // It's not exactly 1 second. Maybe more like 1.5.
   findPressure();
   if(Serial.available()){
   recieveJSON();
@@ -352,5 +406,6 @@ void loop() {
     }
     
   sendJSON();
-  sterilizationProcess();
+  //sterilizationProcess();
+  techDemo();
 }
