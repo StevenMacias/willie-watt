@@ -102,7 +102,6 @@ void serialEvent(Serial serial_port) {
         press_sensor_2 = json.getFloat("press_sensor_2");
         temp_sensor_1 = json.getFloat("temp_sensor_1");
         temp_sensor_2 = json.getFloat("temp_sensor_2");
-        valve_state_1= json.getInt("temp_target");
         temp_target=json.getInt("valve_state_1");
         uControllerState = json.getInt("uControllerState");
         heater = json.getBoolean("heater");

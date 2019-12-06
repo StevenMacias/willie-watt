@@ -1,0 +1,15 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+current_press	tools/virtual_port_simulator/virtual_port_simulator.py	/^current_press = 0.0$/;"	v
+current_temp	tools/virtual_port_simulator/virtual_port_simulator.py	/^current_temp = 0.0$/;"	v
+heater	tools/virtual_port_simulator/virtual_port_simulator.py	/^heater = False$/;"	v
+pressure_max_val	tools/virtual_port_simulator/virtual_port_simulator.py	/^pressure_max_val = 20.00$/;"	v
+sendJsonString	tools/virtual_port_simulator/virtual_port_simulator.py	/^def sendJsonString(ser):$/;"	f
+temp_max_val	tools/virtual_port_simulator/virtual_port_simulator.py	/^temp_max_val = 200.00$/;"	v
+test_serial	tools/virtual_port_simulator/virtual_port_simulator.py	/^def test_serial():$/;"	f
+valve_0	tools/virtual_port_simulator/virtual_port_simulator.py	/^valve_0 = False$/;"	v
+water_pump	tools/virtual_port_simulator/virtual_port_simulator.py	/^water_pump = False$/;"	v
