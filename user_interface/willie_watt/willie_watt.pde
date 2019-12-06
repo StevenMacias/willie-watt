@@ -66,6 +66,7 @@ float temp_sensor_2          = 0;
 int   valve_state_1           =0;
 float temp_target= 0;
 float max_temp;
+float timer=0;
 JSONArray array_values = new JSONArray();
 int uControllerState = 0;
 
@@ -110,6 +111,7 @@ void serialEvent(Serial serial_port) {
         valve_0 = json.getBoolean("valve_0");
         valve_1 = json.getBoolean("valve_1");
         valve_2 = json.getBoolean("valve_2");
+        timer=json.getFloat("timer");
         myTextarea2.setText(json.toString());
        //update knobs
        //temperatureKnob.setValue(temp_sensor_1);
@@ -402,9 +404,8 @@ myTextlabelB.setFont(createFont("Helvetica",14));
 
   
 
-   myTextlabelB.draw(this);
-   img = loadImage("img/logo-inv.png");
-   diagram = loadImage("img/diagram.png");
+   img = loadImage("/Users/sultantariq/Desktop/Advanced Project/willie-watt/user_interface/willie_watt/img/logo-inv.png");
+   diagram = loadImage("/Users/sultantariq/Desktop/Advanced Project/willie-watt/user_interface/willie_watt/img/diagram.png");
    diagram.resize(0, 550);
    
    
@@ -689,8 +690,10 @@ public void SetMaxTemp()
    //box around logs
     rect(50, 180, 390, 250);
     
-   //Outputs
-   //rect(465, 20, 370, 140);   
+   //Time
+   //rect(465, 120, 135, 40);  
+   
+   rect(1140, 440, 135, 40);  
   }
   
   void texts()
@@ -701,6 +704,7 @@ public void SetMaxTemp()
     text("Start", tunning_values_x_pos, tunning_values_y_pos-75);  
     //text("Inputs",tunning_values_x_pos+190, tunning_values_y_pos-75);
     text("Guages",tunning_values_x_pos+425, tunning_values_y_pos+90);
+     text("Timer", 1140, 435);  
  
 
   }
@@ -724,6 +728,8 @@ public void SetMaxTemp()
     background(#3d7c91);
     image(img, 1280-20-(369/3), 20, 369/3, 295/3);
     image(diagram, DIAG_X, DIAG_Y);
+    textSize(32);
+    text(timer, 1160, 470);
     diagramControl();
            
     showMeters();
