@@ -404,8 +404,8 @@ myTextlabelB.setFont(createFont("Helvetica",14));
 
   
 
-   img = loadImage("/Users/sultantariq/Desktop/Advanced Project/willie-watt/user_interface/willie_watt/img/logo-inv.png");
-   diagram = loadImage("/Users/sultantariq/Desktop/Advanced Project/willie-watt/user_interface/willie_watt/img/diagram.png");
+   img = loadImage("img/logo-inv.png");
+   diagram = loadImage("img/diagram.png");
    diagram.resize(0, 550);
    
    
